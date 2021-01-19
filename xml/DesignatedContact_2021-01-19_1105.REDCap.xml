@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<ODM xmlns="http://www.cdisc.org/ns/odm/v1.3" xmlns:ds="http://www.w3.org/2000/09/xmldsig#" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:redcap="https://projectredcap.org" xsi:schemaLocation="http://www.cdisc.org/ns/odm/v1.3 schema/odm/ODM1-3-1.xsd" ODMVersion="1.3.1" FileOID="000-00-0000" FileType="Snapshot" Description="Designated Contact" AsOfDateTime="2021-01-19T11:05:12" CreationDateTime="2021-01-19T11:05:12" SourceSystem="REDCap" SourceSystemVersion="10.5.2">
+<Study OID="Project.DesignatedContact">
+<GlobalVariables>
+	<StudyName>Designated Contact</StudyName>
+	<StudyDescription>This file contains the metadata, events, and data for REDCap project "Designated Contact".</StudyDescription>
+	<ProtocolName>Designated Contact</ProtocolName>
+	<redcap:RecordAutonumberingEnabled>0</redcap:RecordAutonumberingEnabled>
+	<redcap:CustomRecordLabel></redcap:CustomRecordLabel>
+	<redcap:SecondaryUniqueField></redcap:SecondaryUniqueField>
+	<redcap:SchedulingEnabled>0</redcap:SchedulingEnabled>
+	<redcap:SurveysEnabled>0</redcap:SurveysEnabled>
+	<redcap:SurveyInvitationEmailField></redcap:SurveyInvitationEmailField>
+	<redcap:Purpose>0</redcap:Purpose>
+	<redcap:PurposeOther></redcap:PurposeOther>
+	<redcap:ProjectNotes></redcap:ProjectNotes>
+	<redcap:MissingDataCodes></redcap:MissingDataCodes>
+</GlobalVariables>
+<MetaDataVersion OID="Metadata.DesignatedContact_2021-01-19_1105" Name="Designated Contact" redcap:RecordIdField="project_id">
+	<FormDef OID="Form.designated_contact" Name="Designated Contact" Repeating="No" redcap:FormName="designated_contact">
+		<ItemGroupRef ItemGroupOID="designated_contact.project_id" Mandatory="No"/>
+		<ItemGroupRef ItemGroupOID="designated_contact.contact_firstname" Mandatory="No"/>
+		<ItemGroupRef ItemGroupOID="designated_contact.contact_lastname" Mandatory="No"/>
+		<ItemGroupRef ItemGroupOID="designated_contact.designated_contact_complete" Mandatory="No"/>
+	</FormDef>
+	<ItemGroupDef OID="designated_contact.project_id" Name="Designated Contact" Repeating="No">
+		<ItemRef ItemOID="project_id" Mandatory="No" redcap:Variable="project_id"/>
+	</ItemGroupDef>
+	<ItemGroupDef OID="designated_contact.contact_firstname" Name="
+&lt;center&gt;The person listed below is the contact person for this REDCap project.  
+The contact person will be notified of important changes or project issues.
+
+The designated person should be very familiar with this project and with the study it supports. 
+This person can only be chosen if they have User Rights privileges.
+&lt;/center&gt;
+" Repeating="No">
+		<ItemRef ItemOID="contact_firstname" Mandatory="No" redcap:Variable="contact_firstname"/>
+	</ItemGroupDef>
+	<ItemGroupDef OID="designated_contact.contact_lastname" Name="Designated Contact" Repeating="No">
+		<ItemRef ItemOID="contact_lastname" Mandatory="No" redcap:Variable="contact_lastname"/>
+		<ItemRef ItemOID="contact_email" Mandatory="No" redcap:Variable="contact_email"/>
+		<ItemRef ItemOID="contact_phone" Mandatory="No" redcap:Variable="contact_phone"/>
+		<ItemRef ItemOID="contact_sunetid" Mandatory="No" redcap:Variable="contact_sunetid"/>
+		<ItemRef ItemOID="contact_timestamp" Mandatory="No" redcap:Variable="contact_timestamp"/>
+		<ItemRef ItemOID="contact_notified___1" Mandatory="No" redcap:Variable="contact_notified"/>
+	</ItemGroupDef>
+	<ItemGroupDef OID="designated_contact.designated_contact_complete" Name="Form Status" Repeating="No">
+		<ItemRef ItemOID="designated_contact_complete" Mandatory="No" redcap:Variable="designated_contact_complete"/>
+	</ItemGroupDef>
+	<ItemDef OID="project_id" Name="project_id" DataType="text" Length="999" redcap:Variable="project_id" redcap:FieldType="text">
+		<Question><TranslatedText>Project ID</TranslatedText></Question>
+	</ItemDef>
+	<ItemDef OID="contact_firstname" Name="contact_firstname" DataType="text" Length="999" redcap:Variable="contact_firstname" redcap:FieldType="text" redcap:SectionHeader="
+&lt;center&gt;The person listed below is the contact person for this REDCap project.  
+The contact person will be notified of important changes or project issues.
+
+The designated person should be very familiar with this project and with the study it supports. 
+This person can only be chosen if they have User Rights privileges.
+&lt;/center&gt;
+">
+		<Question><TranslatedText>First Name of Contact Person</TranslatedText></Question>
+	</ItemDef>
+	<ItemDef OID="contact_lastname" Name="contact_lastname" DataType="text" Length="999" redcap:Variable="contact_lastname" redcap:FieldType="text">
+		<Question><TranslatedText>Last Name of Contact Person</TranslatedText></Question>
+	</ItemDef>
+	<ItemDef OID="contact_email" Name="contact_email" DataType="text" Length="999" redcap:Variable="contact_email" redcap:FieldType="text" redcap:TextValidationType="email">
+		<Question><TranslatedText>Email Address of Contact Person</TranslatedText></Question>
+	</ItemDef>
+	<ItemDef OID="contact_phone" Name="contact_phone" DataType="text" Length="999" redcap:Variable="contact_phone" redcap:FieldType="text" redcap:TextValidationType="phone">
+		<Question><TranslatedText>Phone number of Contact Person</TranslatedText></Question>
+	</ItemDef>
+	<ItemDef OID="contact_sunetid" Name="contact_sunetid" DataType="text" Length="999" redcap:Variable="contact_sunetid" redcap:FieldType="text">
+		<Question><TranslatedText>sunet ID of Contact Person</TranslatedText></Question>
+	</ItemDef>
+	<ItemDef OID="contact_timestamp" Name="contact_timestamp" DataType="datetime" Length="999" redcap:Variable="contact_timestamp" redcap:FieldType="text" redcap:TextValidationType="datetime_seconds_ymd">
+		<Question><TranslatedText>Timestamp of last contact update</TranslatedText></Question>
+	</ItemDef>
+	<ItemDef OID="contact_notified___1" Name="contact_notified___1" DataType="boolean" Length="1" redcap:Variable="contact_notified" redcap:FieldType="checkbox">
+		<Question><TranslatedText>Contact Notified</TranslatedText></Question>
+		<CodeListRef CodeListOID="contact_notified___1.choices"/>
+	</ItemDef>
+	<ItemDef OID="designated_contact_complete" Name="designated_contact_complete" DataType="text" Length="1" redcap:Variable="designated_contact_complete" redcap:FieldType="select" redcap:SectionHeader="Form Status">
+		<Question><TranslatedText>Complete?</TranslatedText></Question>
+		<CodeListRef CodeListOID="designated_contact_complete.choices"/>
+	</ItemDef>
+	<CodeList OID="contact_notified___1.choices" Name="contact_notified___1" DataType="boolean" redcap:Variable="contact_notified" redcap:CheckboxChoices="1, Yes">
+		<CodeListItem CodedValue="1"><Decode><TranslatedText>Checked</TranslatedText></Decode></CodeListItem>
+		<CodeListItem CodedValue="0"><Decode><TranslatedText>Unchecked</TranslatedText></Decode></CodeListItem>
+	</CodeList>
+	<CodeList OID="designated_contact_complete.choices" Name="designated_contact_complete" DataType="text" redcap:Variable="designated_contact_complete">
+		<CodeListItem CodedValue="0"><Decode><TranslatedText>Incomplete</TranslatedText></Decode></CodeListItem>
+		<CodeListItem CodedValue="1"><Decode><TranslatedText>Unverified</TranslatedText></Decode></CodeListItem>
+		<CodeListItem CodedValue="2"><Decode><TranslatedText>Complete</TranslatedText></Decode></CodeListItem>
+	</CodeList>
+</MetaDataVersion>
+</Study>
+</ODM>
