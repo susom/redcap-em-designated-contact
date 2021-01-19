@@ -1,7 +1,7 @@
 {
   "name": "Designated Contact",
   "namespace": "Stanford\\DesignatedContact",
-  "description": "There is a daily cron job that runs to update pid 15954 with newly created REDCap projects.",
+  "description": "This EM manages the setting of a Designated Contact for each Redcap project.",
   "authors": [
     {
       "name": "Andy Martin",
@@ -22,12 +22,6 @@
   "enable-every-page-hooks-on-system-pages": true,
 
   "links": {
-    "control-center": [
-      {
-        "name": "Designated Contact Cron Instructions",
-        "icon": "gear",
-        "url": "index.php"
-      }
     ],
     "project": [
     ]
