@@ -103,6 +103,7 @@ class DesignatedContact extends \ExternalModules\AbstractExternalModule
             // Find the designated contact project where the data is stored
             $pmon_pid = $this->getSystemSetting('designated-contact-pid');
             $pmon_event_id = $this->getSystemSetting('designated-contact-event-id');
+            $dc_description = $this->getSystemSetting('dc_description');
 
             // See if this user has User Rights. If not, just exit
             $users = getUsersWithUserRights();
@@ -113,26 +114,31 @@ class DesignatedContact extends \ExternalModules\AbstractExternalModule
                 $url = $this->getUrl("src/saveNewContact.php");
 
                 // Retrieve the designated contact in the Project monitoring project
-                $contact_fields = array('contact_sunetid', 'contact_firstname', 'contact_lastname', 'contact_timestamp');
+                $contact_fields = array('contact_sunetid', 'contact_firstname', 'contact_lastname', 'contact_timestamp', 'force_update');
                 $data = REDCap::getData($pmon_pid, 'array', $project_id, $contact_fields);
                 $current_contact = $data[$project_id][$pmon_event_id]['contact_sunetid'];
+                $force_update = $data[$project_id][$pmon_event_id]['force_update']['1'];
+                $this->emDebug("Force update: " . $force_update);
                 if (empty($current_contact)) {
                     $color = "#ffcccc";
-                    $current_person = "No one has been selected yet!";
+                    $current_person = "<b>Designated Contact:</b>  Please setup a Designated Contact ";
                     $contact_timestamp = "";
-                    $new_contact = "Please setup a Designated Contact ";
                 } else {
-                    $color = "#ccffcc";
-                    $current_person = $data[$project_id][$pmon_event_id]['contact_firstname'] . ' ' . $data[$project_id][$pmon_event_id]['contact_lastname'];
-                    $contact_timestamp = "(Last updated: " . $data[$project_id][$pmon_event_id]['contact_timestamp'] . ")";
-                    $new_contact = "";
+                    if ($force_update) {
+                        $color = "cce9ff";
+                        $current_person = "<b>Please verify:</b>  " . $data[$project_id][$pmon_event_id]['contact_firstname'] . ' ' . $data[$project_id][$pmon_event_id]['contact_lastname'] . ' as the project Designated Contact!';
+                        $contact_timestamp = "";
+                    } else {
+                        $color = "#ccffcc";
+                        $current_person = "<b>Designated Contact:</b>  " . $data[$project_id][$pmon_event_id]['contact_firstname'] . ' ' . $data[$project_id][$pmon_event_id]['contact_lastname'];
+                        $contact_timestamp = "(Last updated: " . $data[$project_id][$pmon_event_id]['contact_timestamp'] . ")";
+                    }
                 }
                 $isMe = ($current_contact === $sunet_id);
-                $current_contact_wording = "Designated Contact: ";
 
                 // Set the max width based on which page we are on
                 if (PAGE === 'ProjectSetup/index.php') {
-                    $max_width = 700;
+                    $max_width = 800;
                 } else {
                     $max_width = 630;
                 }
@@ -148,6 +154,23 @@ class DesignatedContact extends \ExternalModules\AbstractExternalModule
 
                     // Make a modal so users can change the Designated Contact
                     $userList .= '<div id="contactDiv" style="margin:20px 0;font-weight:normal;padding:10px; border:1px solid #ccc; max-width:' . $max_width . 'px; background-color:' . $color . ';" > ';
+
+                    // This is the information modal which describes what a designated contact is
+                    $userList .= '    <div id="infomodal" class="modal" tabindex="-1" role="dialog">';
+                    $userList .= '       <div class="modal-dialog modal-sm" role="document">';
+                    $userList .= '          <div class="modal-content">';
+                    $userList .= '              <div class="modal-header" style="background-color:maroon;color:white">';
+                    $userList .= '                  <h6 class="modal-title">What is a Designated Contact?</h6>';
+                    $userList .= '                  <button type="button" class="close" data-dismiss="modal" aria-label="Close">';
+                    $userList .= '                      <span style="color:white;" aria-hidden="true">&times;</span>';
+                    $userList .= '                  </button>';
+                    $userList .= '              </div>';
+                    $userList .= '              <div class="modal-body"><span>' . $dc_description . '</span></div>';
+                    $userList .= '          </div>';
+                    $userList .= '       </div>';
+                    $userList .= '    </div>';
+
+                    // This is the modal to update the designated contact
                     $userList .= '    <div id="contactmodal" class="modal" tabindex="-1" role="dialog">';
                     $userList .= '       <div class="modal-dialog" role="document">';
                     $userList .= '          <div class="modal-content">';
@@ -202,32 +225,35 @@ class DesignatedContact extends \ExternalModules\AbstractExternalModule
                     if (empty($current_contact)) {
 
                         // If there is no currently selected contact, we will make the display bigger (2 lines) so it is prominent
-                        $userList .= '<div style="color:#444;">';
+                        $userList .= '<div>';
                         $userList .= '    <div class="col-sm">';
+                        $userList .= '        <span style="margin-left:5px;">';
+                        $userList .= '            <button type="button" class="fas fa-question-circle" style="margin-right:20px" title="What is a designated contact?" data-toggle="modal" data-target="#infomodal"></button>';
+                        $userList .= '        </span>';
                         $userList .= '        <span style="font-weight:bold;color:#000; ">';
                         $userList .= '            <i class="fas fa-exclamation-triangle" style="margin-right:5px;"></i>';
-                        $userList .=                $current_contact_wording;
                         $userList .= '        </span>';
                         $userList .= '        <span style="font-weight:normal; color:#000; margin-left:5px;">' . $current_person . '</span>';
-                        $userList .= '    </div>';
-                        $userList .= '    <div class="col-sm">';
-                        $userList .= '        <span style="margin-left:20px;">' . $new_contact;
-                        $userList .= '            <button type="button" class="btn btn-sm btn-secondary" style="font-size:12px" href="#" data-toggle="modal" data-target="#contactmodal">here!</button>';
+                        $userList .= '        <span style="margin-left:20px;">';
+                        $userList .= '            <button type="button" class="btn btn-sm btn-primary" style="font-size:12px" data-toggle="modal" data-target="#contactmodal">Click here!</button>';
                         $userList .= '        </span>';
                         $userList .= '    </div>';
                         $userList .= '</div>';
 
                     } else {
 
-                        // If a contact is already selected, we are making the box small (1 line)
-                        $userList .= '<div style="color:#444;">';
+                        // The contact is already selected
+                        $userList .= '<div>';
+                        $userList .= '    <span style="margin-left:5px;">';
+                        $userList .= '        <button type="button" class="fas fa-question-circle" style="margin-right:20px" title="What is a designated contact?" data-toggle="modal" data-target="#infomodal"></button>';
+                        $userList .= '    </span>';
                         $userList .= '    <span style="font-weight:bold;color:#000;">';
                         $userList .= '      <i class="fas fa-address-book" style="margin-right:5px;"></i>';
                         $userList .=            $current_contact_wording;
                         $userList .= '    </span>';
                         $userList .= '    <span style="font-weight:normal;color:#000;margin-right:5px;">' . $current_person . '</span>';
                         $userList .= '    <span style="font-weight:normal;font-size:10px;color:#000;margin-right:5px;">' . $contact_timestamp . '</span>';
-                        $userList .= '    <span style="margin-left:10px;">' . $new_contact;
+                        $userList .= '    <span style="margin-left:10px;">';
                         $userList .= '        <button type="button" class="btn btn-sm btn-secondary" style="font-size:12px" href="#" data-toggle="modal" data-target="#contactmodal">Change!</button>';
                         $userList .= '    </span>';
                         $userList .= '</div>';

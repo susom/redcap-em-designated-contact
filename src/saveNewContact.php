@@ -12,17 +12,12 @@ use REDCap;
  * a list of project users who have User Rights privileges.  When a new contact is saved, the new and old
  * Designated Contact will be sent email to let them know the contact has been changed.
  *
- * The Designated Contact will be changed in the Project Monitoring project and a log entry will be created.
+ * The Designated Contact will be changed in the Project Monitoring project and a log entry will be created om
+ * project where a new contact was selected..
  */
-
 
 $user = USERID;
 $des_contact = array();
-
-$from_email = "noreply@stanford.edu";
-$oldSubject = "You have been removed as REDCap Designated Contact";
-$body = "The Designated Contact for your REDCap project has changed. Please see below for details:";
-$newSubject = "You have been added as REDCap Designated Contact";
 
 $pid = isset($_GET['pid']) && !empty($_GET['pid']) ? $_GET['pid'] : null;
 $contact = isset($_POST['selected_contact']) && !empty($_POST['selected_contact']) ? $_POST['selected_contact'] : null;
@@ -38,6 +33,7 @@ foreach($users as $sunetid => $userInfo) {
     $des_contact[$pid]["contact_phone"]     = $userInfo["contact_phone"];
     $des_contact[$pid]['contact_timestamp'] = date("Y-m-d H:i:s");
     $des_contact[$pid]['designated_contact_complete'] = '2';
+    $des_contact[$pid]['force_update___1'] = '0';
     $des_contact[$pid]['contact_notified___1'] = '1';
 }
 
@@ -67,22 +63,29 @@ if (!empty($des_contact)) {
         $change = retrieveUserInformation(array($user));
         $changer = $change[$user]["contact_firstname"] . ' ' . $change[$user]["contact_lastname"];
 
-        $emailBody = $body;
-        $emailBody .= "<br>Project ID:                 " . $pid;
-        $emailBody .= "<br>Person who made the change: " . $changer;
-        if (!empty($old_sunetid)) {
-            $emailBody .= "<br>Designated Contact Removed: " . $old_name;
-        }
-        $emailBody .= "<br>Designated Contact Added:   " . $new_name;
+        // Retrieve the verbiage, from the system settings, for the emails that will be sent to the new DC
+        $from_email     = $module->getSystemSetting('from-address');
+        $old_subject    = $module->getSystemSetting('old-dc-email-subject');
+        $old_body       = $module->getSystemSetting('old-dc-email-body');
+        $new_subject    = $module->getSystemSetting('new-dc-email-subject');
+        $new_body       = $module->getSystemSetting('new-dc-email-body');
 
         // Check to see if we need to send email to the one being removed
         if (!empty($old_sunetid)) {
-            if ($old_sunetid !== $user) {
+            if (($old_sunetid !== $user) and ($old_email !== $new_email)) {
+
+                // Put together the email body with pid and person who made the change
+                $emailBody = $old_body;
+                $emailBody .= "<br>Project ID:                 " . $pid;
+                $emailBody .= "<br>Person who made the change: " . $changer;
+                if (!empty($old_sunetid)) {
+                    $emailBody .= "<br>Designated Contact Removed: " . $old_name;
+                }
+                $emailBody .= "<br>Designated Contact Added:   " . $new_name;
 
                 // Send email to the current contact
                 if (!empty($old_email)) {
-                    $module->emDebug("TO: $old_email, SUBJECT: $oldSubject, BODY: $emailBody");
-                    REDCap::email($old_email, $from_email, $oldSubject, $emailBody);
+                    REDCap::email($old_email, $from_email, $old_subject, $emailBody);
                 } else {
                     $module->emError("Cannot send email to $old_sunetid that $user has removed them from Designated Contact for project $pid");
                 }
@@ -92,9 +95,18 @@ if (!empty($des_contact)) {
         // Check to see if we need to send email to the one being added
         if ($contact !== $user) {
             // Send email to the new contact
-            if (!empty($new_email)) {
-                $module->emDebug("TO: $new_email, SUBJECT: $newSubject, BODY: $emailBody");
-                $status = REDCap::email($new_email, $from_email, $newSubject, $emailBody);
+            if (!empty($new_email) and ($new_email !== $old_email)) {
+
+                // Put together the email body with pid and person making the change
+                $emailBody = $new_body;
+                $emailBody .= "<br>Project ID:                 " . $pid;
+                $emailBody .= "<br>Person who made the change: " . $changer;
+                if (!empty($old_sunetid)) {
+                    $emailBody .= "<br>Designated Contact Removed: " . $old_name;
+                }
+                $emailBody .= "<br>Designated Contact Added:   " . $new_name;
+
+                $status = REDCap::email($new_email, $from_email, $new_subject, $emailBody);
                 if (!$status) {
                     $module->emError("Email did not get sent to $new_email for project $pid");
                 } else {
