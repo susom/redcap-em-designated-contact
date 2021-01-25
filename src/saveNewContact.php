@@ -42,6 +42,7 @@ if (!empty($des_contact)) {
     // Find the designated contact project where the data is stored
     $pmon_pid = $module->getSystemSetting('designated-contact-pid');
     $pmon_event_id = $module->getSystemSetting('designated-contact-event-id');
+    $project_title = REDCap::getProjectTitle();
 
     // New contact
     $new_email = $des_contact[$pid]["contact_email"];
@@ -77,6 +78,7 @@ if (!empty($des_contact)) {
                 // Put together the email body with pid and person who made the change
                 $emailBody = $old_body;
                 $emailBody .= "<br>Project ID:                 " . $pid;
+                $emailBody .= "<br>Project Title:              " . $project_title;
                 $emailBody .= "<br>Person who made the change: " . $changer;
                 if (!empty($old_sunetid)) {
                     $emailBody .= "<br>Designated Contact Removed: " . $old_name;
@@ -100,6 +102,7 @@ if (!empty($des_contact)) {
                 // Put together the email body with pid and person making the change
                 $emailBody = $new_body;
                 $emailBody .= "<br>Project ID:                 " . $pid;
+                $emailBody .= "<br>Project Title:              " . $project_title;
                 $emailBody .= "<br>Person who made the change: " . $changer;
                 if (!empty($old_sunetid)) {
                     $emailBody .= "<br>Designated Contact Removed: " . $old_name;
