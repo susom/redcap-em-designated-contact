@@ -16,17 +16,17 @@ use REDCap;
  * project where a new contact was selected..
  */
 
-$user = USERID;
+$current_user = USERID;
 $des_contact = array();
 
 $pid = isset($_GET['pid']) && !empty($_GET['pid']) ? $_GET['pid'] : null;
 $contact = isset($_POST['selected_contact']) && !empty($_POST['selected_contact']) ? $_POST['selected_contact'] : null;
 
-// Retrieve the user information from the sunetid
+// Retrieve the user information from their username
 $users = retrieveUserInformation(array($contact));
-foreach($users as $sunetid => $userInfo) {
+foreach($users as $userid => $userInfo) {
     $des_contact[$pid]["project_id"] = $pid;
-    $des_contact[$pid]['contact_sunetid']   = $sunetid;
+    $des_contact[$pid]['contact_id']   = $userid;
     $des_contact[$pid]["contact_firstname"] = $userInfo["contact_firstname"];
     $des_contact[$pid]["contact_lastname"]  = $userInfo["contact_lastname"];
     $des_contact[$pid]["contact_email"]     = $userInfo["contact_email"];
@@ -49,20 +49,21 @@ if (!empty($des_contact)) {
     $new_name = $des_contact[$pid]["contact_firstname"] . ' ' . $des_contact[$pid]["contact_lastname"];
 
     // Old contact
-    $fields = array('contact_sunetid', 'contact_email', 'contact_firstname', 'contact_lastname');
+    $fields = array('contact_id', 'contact_email', 'contact_firstname', 'contact_lastname');
     $old_contact = REDCap::getData($pmon_pid, 'array', $pid, $fields, $pmon_event_id);
-    $old_sunetid = $old_contact[$pid][$pmon_event_id]['contact_sunetid'];
+    $old_user = $old_contact[$pid][$pmon_event_id]['contact_id'];
     $old_email = $old_contact[$pid][$pmon_event_id]['contact_email'];
     $old_name = $old_contact[$pid][$pmon_event_id]['contact_firstname'] . ' ' . $old_contact[$pid][$pmon_event_id]['contact_lastname'];
 
+    $return_status = REDCap::saveData($pmon_pid, 'json', json_encode($des_contact));
+
     // Save the new contact
-    if (empty($status['errors'])) {
-        $status = REDCap::saveData($pmon_pid, 'json', json_encode($des_contact));
-        REDCap::logEvent('New Contact', "Designated Contact changed to $contact by $user", null, null, null, $pid);
+    if (empty($return_status['errors'])) {
+        REDCap::logEvent('New Contact', "Designated Contact changed to $contact by $current_user", null, null, null, $pid);
 
         // Person who made the change
-        $change = retrieveUserInformation(array($user));
-        $changer = $change[$user]["contact_firstname"] . ' ' . $change[$user]["contact_lastname"];
+        $change = retrieveUserInformation(array($current_user));
+        $changer = $change[$current_user]["contact_firstname"] . ' ' . $change[$current_user]["contact_lastname"];
 
         // Retrieve the verbiage, from the system settings, for the emails that will be sent to the new DC
         $from_email     = $module->getSystemSetting('from-address');
@@ -72,39 +73,39 @@ if (!empty($des_contact)) {
         $new_body       = $module->getSystemSetting('new-dc-email-body');
 
         // Check to see if we need to send email to the one being removed
-        if (!empty($old_sunetid)) {
-            if (($old_sunetid !== $user) and ($old_email !== $new_email)) {
+        if (!empty($old_user)) {
+            if (($old_user != $current_user) and ($old_email != $new_email)) {
 
                 // Put together the email body with pid and person who made the change
                 $emailBody = $old_body;
                 $emailBody .= "<br>Project ID:                 " . $pid;
                 $emailBody .= "<br>Project Title:              " . $project_title;
                 $emailBody .= "<br>Person who made the change: " . $changer;
-                if (!empty($old_sunetid)) {
+                if (!empty($old_user)) {
                     $emailBody .= "<br>Designated Contact Removed: " . $old_name;
                 }
                 $emailBody .= "<br>Designated Contact Added:   " . $new_name;
 
-                // Send email to the current contact
+                // Send email to the old contact
                 if (!empty($old_email)) {
-                    REDCap::email($old_email, $from_email, $old_subject, $emailBody);
+                    $status = REDCap::email($old_email, $from_email, $old_subject, $emailBody);
                 } else {
-                    $module->emError("Cannot send email to $old_sunetid that $user has removed them from Designated Contact for project $pid");
+                    $module->emError("Cannot send email to $old_user that $current_user has removed them from Designated Contact for project $pid");
                 }
             }
         }
 
         // Check to see if we need to send email to the one being added
-        if ($contact !== $user) {
+        if ($contact != $current_user) {
             // Send email to the new contact
-            if (!empty($new_email) and ($new_email !== $old_email)) {
+            if (!empty($new_email) and ($new_email != $old_email)) {
 
                 // Put together the email body with pid and person making the change
                 $emailBody = $new_body;
                 $emailBody .= "<br>Project ID:                 " . $pid;
                 $emailBody .= "<br>Project Title:              " . $project_title;
                 $emailBody .= "<br>Person who made the change: " . $changer;
-                if (!empty($old_sunetid)) {
+                if (!empty($old_user)) {
                     $emailBody .= "<br>Designated Contact Removed: " . $old_name;
                 }
                 $emailBody .= "<br>Designated Contact Added:   " . $new_name;
@@ -116,17 +117,17 @@ if (!empty($des_contact)) {
                     $module->emLog("Successfully sent email to $new_email for project $pid");
                 }
             } else {
-                $module->emError("Cannot send email to $new_email that $user has removed them from Designated Contact for project $pid");
+                $module->emError("Cannot send email to $new_email that $current_user has removed them from Designated Contact for project $pid");
             }
         }
 
         print 1;
     } else {
         print 0;
-        $module->emError("Cannot update Designated Contact $contact for project $pid by $user", $status);
+        $module->emError("Cannot update Designated Contact $contact for project $pid by $current_user: ", json_encode($return_status));
     }
 } else {
-    $module->emError("Could not find new Designated Contact $contact in DB for project $pid by $user");
+    $module->emError("Could not find new Designated Contact $contact in DB for project $pid by $current_user");
     print 0;
 }
 

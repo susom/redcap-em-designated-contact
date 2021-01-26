@@ -33,19 +33,26 @@ class DesignatedContact extends \ExternalModules\AbstractExternalModule
      */
     function redcap_every_page_before_render($project_id=null) {
 
-        $sunet_id = USERID;
+        $user = USERID;
+        if (empty($user)) {
+            return;
+        }
 
         /*
          * This section will place the Designated Contact icon next to the project title on the My Projects page.
          */
-        if (PAGE === 'index.php') {
+        if (((PAGE === 'Home/index.php') || (PAGE === 'index.php'))
+                && ($_GET["action"] == "myprojects")) {
 
             // Find the designated contact project where the data is stored
             $pmon_pid = $this->getSystemSetting('designated-contact-pid');
             $pmon_event_id = $this->getSystemSetting('designated-contact-event-id');
+            if (empty($pmon_pid) || empty($pmon_event_id)) {
+                return;
+            }
 
             // Find the projects that this user is the designated contact and put the icon next to the name
-            $projects = contactProjectList($sunet_id, $pmon_pid, $pmon_event_id);
+            $projects = contactProjectList($user, $pmon_pid, $pmon_event_id);
             ?>
 
             <script type="text/javascript">
@@ -98,27 +105,30 @@ class DesignatedContact extends \ExternalModules\AbstractExternalModule
          * add the Designated Contact block which allows users to change the contact.
          *
          */
+
         if (PAGE === 'UserRights/index.php' || PAGE === 'ProjectSetup/index.php') {
 
             // Find the designated contact project where the data is stored
             $pmon_pid = $this->getSystemSetting('designated-contact-pid');
             $pmon_event_id = $this->getSystemSetting('designated-contact-event-id');
             $dc_description = $this->getSystemSetting('dc_description');
+            if (empty($pmon_pid) || empty($pmon_event_id)) {
+                return;
+            }
 
             // See if this user has User Rights. If not, just exit
             $users = getUsersWithUserRights();
 
-            if (in_array($sunet_id, $users)) {
+            if (in_array($user, $users)) {
 
                 // This is the page that will be called to save the designated contact
                 $url = $this->getUrl("src/saveNewContact.php");
 
                 // Retrieve the designated contact in the Project monitoring project
-                $contact_fields = array('contact_sunetid', 'contact_firstname', 'contact_lastname', 'contact_timestamp', 'force_update');
+                $contact_fields = array('contact_id', 'contact_firstname', 'contact_lastname', 'contact_timestamp', 'force_update');
                 $data = REDCap::getData($pmon_pid, 'array', $project_id, $contact_fields);
-                $current_contact = $data[$project_id][$pmon_event_id]['contact_sunetid'];
+                $current_contact = $data[$project_id][$pmon_event_id]['contact_id'];
                 $force_update = $data[$project_id][$pmon_event_id]['force_update']['1'];
-                $this->emDebug("Force update: " . $force_update);
                 if (empty($current_contact)) {
                     $color = "#ffcccc";
                     $current_person = "<b>Designated Contact:</b>  Please setup a Designated Contact ";
@@ -134,7 +144,7 @@ class DesignatedContact extends \ExternalModules\AbstractExternalModule
                         $contact_timestamp = "(Last updated: " . $data[$project_id][$pmon_event_id]['contact_timestamp'] . ")";
                     }
                 }
-                $isMe = ($current_contact === $sunet_id);
+                $isMe = ($current_contact == $user);
 
                 // Set the max width based on which page we are on
                 if (PAGE === 'ProjectSetup/index.php') {
@@ -190,7 +200,7 @@ class DesignatedContact extends \ExternalModules\AbstractExternalModule
 
                     // Add users that have User Rights to the selection list.
                     foreach ($availableContacts as $username => $userInfo) {
-                        $userList .= '<option value="' . $userInfo['contact_sunetid'] . '">' . $userInfo['contact_firstname'] . ' ' . $userInfo['contact_lastname'] . ' [' . $userInfo['contact_sunetid'] . ']' . '</option>';
+                        $userList .= '<option value="' . $userInfo['contact_id'] . '">' . $userInfo['contact_firstname'] . ' ' . $userInfo['contact_lastname'] . ' [' . $userInfo['contact_id'] . ']' . '</option>';
                     }
 
                     $userList .= '                        </select>';
