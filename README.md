@@ -1,9 +1,9 @@
 # Designated Contact EM
 
 ## Overview
-This EM will prompt users part of a Redcap project, who have User Rights privileges, to select a designated
+This EM will prompt users, who part of a Redcap project and who have User Rights privileges, to select a designated
 contact for the project. The project designated contact should be familiar with the Redcap project and
-be familiar with the study. They will be the point person for any communications between the Redcap group
+be familiar with the study. This person will be the point person for any communications between the Redcap group
 and the study group
 
 Initially, a Designated Contact is not selected so the Project Setup page will display this message
@@ -27,7 +27,7 @@ page will display an icon next to the project to indicate they are selected
 ## Setup
 A Redcap project XML file is located in the xml directory which can be used as the
 Designated Contact redcap project.  This file contains all the fields that the EM
-populates. 
+populates.
 
 Once this Redcap project is created and this EM is installed, the EM system configuration
 needs to be setup. The required parameters are:
