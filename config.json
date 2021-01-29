@@ -16,7 +16,7 @@
   ],
 
   "permissions": [
-    "redcap_every_page_before_render"
+    "redcap_every_page_top"
   ],
 
   "enable-every-page-hooks-on-system-pages": true,
