@@ -4,7 +4,6 @@ namespace Stanford\DesignatedContact;
 
 use REDCap;
 
-
 /**
  * NOTE: This must be called in Project Context since REDCap functions need to know what project it is in.
  * This function retrieves the list of users who have User Rights privileges for this project.
@@ -52,6 +51,7 @@ function retrieveUserInformation($users) {
     }
 
     return $contact;
+
 }
 
 /**
@@ -71,6 +71,42 @@ function contactProjectList($user, $pmon_pid, $pmon_event_id) {
     $records = array();
     foreach ($data as $record_id => $record_info) {
         $records[$record_id] = $record_id;
+    }
+
+    return $records;
+}
+
+
+/**
+ * This function will retrieve a list of projects that this person is a Project Admin or has User Rights and that does
+ * not have a Designated Contact selected.
+ *
+ * @param $user - user ID of current user
+ * @return array - Projects that this user is the Designated Contact
+ */
+
+function noContactSelectedList($user) {
+
+    $db_query = "select rur.project_id
+                    from redcap_user_rights rur
+                        left join redcap_user_roles ruro on rur.role_id = ruro.role_id
+                        join redcap_projects rp on rur.project_id = rp.project_id
+                    where  rp.completed_time is null
+                    and ifnull(ruro.user_rights, rur.user_rights) = 1
+                    and rur.expiration is null
+                    and rur.project_id not in (select rd.record
+                                                    from redcap_data rd
+                                                        join redcap_projects rp on rd.project_id = rp.project_id
+                                                    where rd.field_name = 'contact_id'
+                                                    and rd.project_id = 22052
+                                                )
+                    and rur.username='" . $user . "'";
+
+
+    $records = array();
+    $q = db_query($db_query);
+    while($proj_id = db_fetch_assoc($q)) {
+        $records[] = $proj_id['project_id'];
     }
 
     return $records;
