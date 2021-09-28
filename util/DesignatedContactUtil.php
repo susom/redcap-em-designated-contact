@@ -21,12 +21,6 @@ function getUsersWithUserRights($project_id) {
                     and rp.date_deleted is null
                     and ifnull(ruro.user_rights, rur.user_rights) = 1
                     and rur.expiration is null
-                    and rur.project_id not in (select rd.record
-                                                    from redcap_data rd
-                                                        join redcap_projects rp on rd.project_id = rp.project_id
-                                                    where rd.field_name = 'contact_id'
-                                                    and rd.project_id = 22052
-                                                )
                     and rur.project_id = '" . $project_id . "'";
 
     $users = array();
