@@ -10,20 +10,35 @@ use REDCap;
  *
  * @return array - users who have User Rights for this project
  */
-function getUsersWithUserRights() {
 
-    $userRightsUsers = array();
-    $allUsers = REDCap::getUsers();
-    foreach($allUsers as $cnt => $user) {
-        $rights = REDCap::getUserRights($user);
-        if ($rights[$user]["user_rights"] == 1) {
-            $userRightsUsers[] = $user;
-        }
+function getUsersWithUserRights($project_id) {
+
+    $db_query = "select rur.username
+                    from redcap_user_rights rur
+                        left join redcap_user_roles ruro on rur.role_id = ruro.role_id
+                        join redcap_projects rp on rur.project_id = rp.project_id
+                    where  rp.completed_time is null
+                    and rp.date_deleted is null
+                    and ifnull(ruro.user_rights, rur.user_rights) = 1
+                    and rur.expiration is null
+                    and rur.project_id not in (select rd.record
+                                                    from redcap_data rd
+                                                        join redcap_projects rp on rd.project_id = rp.project_id
+                                                    where rd.field_name = 'contact_id'
+                                                    and rd.project_id = 22052
+                                                )
+                    and rur.project_id = '" . $project_id . "'";
+
+    $users = array();
+    $q = db_query($db_query);
+    while($proj_id = db_fetch_assoc($q)) {
+        $users[] = $proj_id['username'];
     }
 
-    return $userRightsUsers;
+    return $users;
 
 }
+
 
 /**
  * Given an array of userids, this function will return the user name and contact info

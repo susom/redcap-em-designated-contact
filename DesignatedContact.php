@@ -73,7 +73,8 @@ class DesignatedContact extends \ExternalModules\AbstractExternalModule
         if (PAGE === 'UserRights/index.php' || PAGE === 'ProjectSetup/index.php') {
 
             // See if this user has User Rights. If not, just exit
-            $users = getUsersWithUserRights();
+            $users = getUsersWithUserRights($project_id);
+            $this->emDebug("These are users with User Rights for project $project_id: " . json_encode($users));
             if (in_array($user, $users)) {
 
                 // Find the designated contact project where the data is stored. If it is not setup yet, exit
