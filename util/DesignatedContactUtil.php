@@ -17,10 +17,12 @@ function getUsersWithUserRights($project_id) {
                     from redcap_user_rights rur
                         left join redcap_user_roles ruro on rur.role_id = ruro.role_id
                         join redcap_projects rp on rur.project_id = rp.project_id
+                        join redcap_user_information rui on rui.username = rur.username
                     where  rp.completed_time is null
                     and rp.date_deleted is null
                     and ifnull(ruro.user_rights, rur.user_rights) = 1
                     and rur.expiration is null
+                    and rui.user_suspended_time is null
                     and rur.project_id = '" . $project_id . "'";
 
     $users = array();

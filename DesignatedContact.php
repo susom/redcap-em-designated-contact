@@ -189,7 +189,8 @@ class DesignatedContact extends \ExternalModules\AbstractExternalModule
 
         // Add users that have User Rights to the selection list.
         foreach ($availableContacts as $username => $userInfo) {
-            $userList .= '<option value="' . $userInfo['contact_id'] . '">' . $userInfo['contact_firstname'] . ' ' . $userInfo['contact_lastname'] . ' [' . $userInfo['contact_id'] . ']' . '</option>';
+            $userList .= '<option value="' . $userInfo['contact_id'] . '">' . str_replace("'", "&#39;", $userInfo['contact_firstname'])
+                                            . ' ' . str_replace("'", "&#39;", $userInfo['contact_lastname']) . ' [' . $userInfo['contact_id'] . ']' . '</option>';
         }
 
         $userList .= '                        </select>';
