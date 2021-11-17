@@ -90,13 +90,14 @@ function contactProjectList($user, $pmon_pid, $pmon_event_id) {
 
 /**
  * This function will retrieve a list of projects that this person is a Project Admin or has User Rights and that does
- * not have a Designated Contact selected.
+ * not have a Designated Contact selected. Since the Designated Contact table is now being updated in real-time, we can
+ * query against it rather than querying against the redcap_data table for currently selected DC projects.
  *
  * @param $user - user ID of current user
  * @return array - Projects that this user is the Designated Contact
  */
 
-function noContactSelectedList($user) {
+function noContactSelectedList($user, $pmon_pid) {
 
     $db_query = "select rur.project_id
                     from redcap_user_rights rur
@@ -105,14 +106,8 @@ function noContactSelectedList($user) {
                     where  rp.completed_time is null
                     and ifnull(ruro.user_rights, rur.user_rights) = 1
                     and rur.expiration is null
-                    and rur.project_id not in (select rd.record
-                                                    from redcap_data rd
-                                                        join redcap_projects rp on rd.project_id = rp.project_id
-                                                    where rd.field_name = 'contact_id'
-                                                    and rd.project_id = 22052
-                                                )
+                    and rur.project_id not in (select project_id from designated_contact_selected)
                     and rur.username='" . $user . "'";
-
 
     $records = array();
     $q = db_query($db_query);
@@ -121,4 +116,21 @@ function noContactSelectedList($user) {
     }
 
     return $records;
+}
+
+
+function update_dc_table($new_contact) {
+
+    global $module;
+
+    // Update the designated contact so it is always up-to-date
+    $db_query = "replace into designated_contact_selected
+    (project_id, contact_first_name, contact_last_name, contact_email, contact_userid, last_update_date)
+    values
+    ('" . $new_contact['project_id'] . "', '" . $new_contact['contact_firstname'] . "', '" . $new_contact['contact_lastname'] .
+        "', '" . $new_contact['contact_email'] . "', '" . $new_contact['contact_id'] . "', now());";
+
+    $q = db_query($db_query);
+    $module->emDebug("Return from db_query: " . $q);
+
 }

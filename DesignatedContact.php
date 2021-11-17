@@ -53,9 +53,11 @@ class DesignatedContact extends \ExternalModules\AbstractExternalModule
 
             // Find the projects that this user is the designated contact and put the icon next to the name
             $projects = contactProjectList($user, $pmon_pid, $pmon_event_id);
+            $this->emDebug("Projects for this user: " . json_encode($projects));
 
             // Find the projects that this user has User Rights but no designated contact was selected
-            $no_dc_projects = noContactSelectedList($user);
+            $no_dc_projects = noContactSelectedList($user, $pmon_pid);
+            $this->emDebug("No DC projects: " . json_encode($no_dc_projects));
 
             // Add the javascript which will inject the html into the page to display the DC icons
             require_once $this->getModulePath() . "src/designated_contact_icon.php";

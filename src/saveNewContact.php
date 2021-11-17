@@ -56,10 +56,16 @@ if (!empty($des_contact)) {
     $old_name = $old_contact[$pid][$pmon_event_id]['contact_firstname'] . ' ' . $old_contact[$pid][$pmon_event_id]['contact_lastname'];
 
     $return_status = REDCap::saveData($pmon_pid, 'json', json_encode($des_contact));
+    $module->emDebug("New des contact: " . json_encode($des_contact[$pid]));
 
     // Save the new contact
     if (empty($return_status['errors'])) {
+
+        // Log the event in the Log table so users have a record when this happened
         REDCap::logEvent('New Contact', "Designated Contact changed to $contact by $current_user", null, null, null, $pid);
+
+        // Also update the designated_contact table in MariaDB so that table is up-to-date
+        update_dc_table($des_contact[$pid]);
 
         // Person who made the change
         $change = retrieveUserInformation(array($current_user));
