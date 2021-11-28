@@ -19,7 +19,6 @@ class DesignatedContact extends \ExternalModules\AbstractExternalModule
         parent::__construct();
     }
 
-
     /**
      * This function is called after each page is loaded and before it is rendered. There are 2 main reasons
      * we have it enabled.
@@ -77,7 +76,7 @@ class DesignatedContact extends \ExternalModules\AbstractExternalModule
             // See if this user has User Rights. If not, just exit
             $users = getUsersWithUserRights($project_id);
             $this->emDebug("These are users with User Rights for project $project_id: " . json_encode($users));
-            if (in_array($user, $users)) {
+            if (in_array($user, $users) || ((defined("SUPER_USER") && SUPER_USER))) {
 
                 // Find the designated contact project where the data is stored. If it is not setup yet, exit
                 $pmon_pid = $this->getSystemSetting('designated-contact-pid');
@@ -256,5 +255,195 @@ class DesignatedContact extends \ExternalModules\AbstractExternalModule
 
         return $userList;
     }
+
+    /**
+     * CRON JOBS
+     */
+
+    /**
+     * This cron job will move projects to completed status when the following list of criteria is met:
+     *
+     *      1. All users on the project are suspended (which mean they haven't logged into REDCap for 6 months?)
+     *      2. The last logged entry is > 18 months ago
+     *      3. The project is in development or production mode
+     *      4. No designated contact selected
+     *
+     * This cron will run weekly.
+     */
+    public function moveProjectsToComplete() {
+
+        // Retrieve the project id where the designated contact data is stored
+        $dc_pid = $this->getSystemSetting('designated-contact-pid');
+        $this->emDebug("DC project ID: " . $dc_pid);
+
+        // Update the temporary table which looks at all projects with no current users and retrieve all
+        // the log tables we need to look at to see when the last log event was
+        $log_tables = updateSuspendedUserTable();
+        $this->emDebug("Log tables to query against: " . json_encode($log_tables));
+
+        foreach($log_tables as $log_table => $log_table_name) {
+
+            // Cross reference the suspended user table with the log event table to see which projects'
+            // last log entry was > 12 months ago
+            $project_ids = lastLogDate($log_table_name['log_event_table']);
+            $this->emDebug("project ids: " . json_encode($project_ids));
+
+            foreach ($project_ids as $pid) {
+                $this->emDebug("This project will be moved to Complete: " . $pid);
+
+                //These are the project to move to Complete status
+                $status = moveToComplete($dc_pid, $pid);
+                $this->emDebug("This is the response from saveData: " . json_encode($status));
+                if ($status) {
+                    $this->emDebug("Project $pid was automatically moved to Completed status");
+                } else {
+                    $this->emError("Project $pid could not be automatically moved to Completed status");
+                }
+            }
+        }
+    }
+
+    /**
+     * This cron will set the Designated Contact to the creator of the project for new projects when
+     * one wasn't already selected
+     *
+     * This cron will run nightly.
+     */
+    public function newProjectsNoDC() {
+
+        // Retrieve the project id where the designated contact data is stored
+        $dc_pid = $this->getSystemSetting('designated-contact-pid');
+        $this->emDebug("Designated Contact project: " . $dc_pid);
+
+        // Find the new projects created in the last 2 days that do not have DC selected yet
+        $new_pids = newProjectSetDC($dc_pid);
+        $this->emDebug("These are the list of projects that the automated cron set the designated contact: " . json_encode($new_pids));
+
+    }
+
+    /**
+     * This cron will look for DC who are suspended and set the new DC to the user who has User Rights and was the last
+     * user to have made an entry in the log file. If no active users have User Rights, set the status to Orphaned in
+     * the REDCap DC project.
+     */
+
+    public function reassignDesignatedContact() {
+
+        // Retrieve the project id where the designated contact data is stored
+        $dc_pid = $this->getSystemSetting('designated-contact-pid');
+
+        // Look for users who are the designated contacts for a project but are suspended
+        $pids = projectsWithSuspendedDC();
+        $this->emDebug("Projects with suspended DC: " . json_encode($pids));
+
+        if (!empty($pids)) {
+            $status = $this->updateDesignatedContact($dc_pid, $pids);
+            $this->emDebug("Log table: " . $status);
+        }
+    }
+/*
+    private function updateDesignatedContact($dc_pid, $pids) {
+
+        $updated = array();
+        $status = true;
+        $now = date("Y-m-d H:i:s");
+
+        // Retrieve list of orphaned projects so we don't keep updating with a new date
+        $filter = "[cron_date_orphaned_project] <> ''";
+        $data = $this->getProjectData($dc_pid, $filter, array('project_id'));
+        $orphaned_projects = array_keys($data);
+        $this->emDebug("Projects that already have an orphan data: " . json_encode($orphaned_projects));
+
+        // Loop over each project and see if there is another person we can set as the designated contact
+        foreach ($pids as $pid) {
+
+            // Retrieve all users with user rights that are not suspended
+            $users = getUsersWithUserRights($pid);
+            if (empty($users)) {
+
+                // Only update the date if it is clear since we want to know when the project first became orphaned.
+                if (!in_array($pid, $orphaned_projects)) {
+                    // No other users can be made a designated contact.  We consider this orphaned
+                    $updated[$pid]['project_id'] = $pid;
+                    $updated[$pid]['cron_status'] = 'Orphaned';
+                    $updated[$pid]['cron_date_orphaned_project'] = $now;
+                    $updated[$pid]['cron_updates_complete'] = 2;
+                } else {
+                    $this->emDebug("Already in orphan array $pid");
+                }
+
+            } else{
+
+                // Find who the new dc should be
+                $latest_user = $this->findUserWithLastLoggedEvent($pid, $users);
+                if (!empty($latest_user)) {
+
+                    // Save the new user
+
+
+                    // Save the new status
+                    $updated[$pid]['project_id'] = $pid;
+                    $updated[$pid]['cron_status'] = 'Re-selected';
+                    $updated[$pid]['cron_date_reselected_dc'] = $now;
+                    $updated[$pid]['cron_updates_complete'] = 2;
+
+                    // Make a log entry so users can tell what happened
+                    REDCap::logEvent('Automated Cron', 'Automatically set Designated Contact to ' . $latest_user, null, null, null, $pid);
+                }
+            }
+        }
+
+        // If there are some updated projects, save them to the REDCap tracking project
+        if (!empty($updated)) {
+            $response = REDCap::saveData($dc_pid, 'json', json_encode($updated));
+            if (!empty($response['errors'])) {
+                $status = false;
+            }
+        }
+
+        return $status;
+
+    }
+
+    private function getProjectData($pid, $filter, $fields) {
+
+        $data = REDCap::getData($pid, 'array', null, $fields, null, null, null, null, null, $filter);
+        return $data;
+
+    }
+
+    private function findUserWithLastLoggedEvent($pid, $users) {
+
+        // Check to see if there are more than one user who has User Rights
+        $this->emDebug("Users: " . json_encode($users));
+        if (count($users) > 1) {
+
+            // Find the log table where this project's data is stored
+            $sql = 'select log_event_table from redcap_projects where project_id = ' . $pid;
+            $q = db_query($sql);
+            $log_table = db_fetch_row($q);
+            $this->emDebug("Log table: " . $log_table);
+
+            // Retrieve the log entries for the users with
+            $user_list = implode("','", $users);
+            $sql = "select (select user from " . $log_table . " where log_event_id = log.log_event_id) as last_log_user
+                        from (
+                            select max(rl.log_event_id) as log_event_id
+                                from " . $log_table . " rl
+                                    join redcap_user_information rui on rui.username = rl.user
+                                where rl.project_id = " . $pid . "
+                                and rl.user in ('" . $user_list . "')
+                                and rl.ts is not null
+                        ) as log";
+            $q = db_query($q);
+            $new_user = db_fetch_row($q)[0];
+
+        } else {
+            $new_user = $users[0];
+        }
+
+        return $new_user;
+    }
+*/
 
 }

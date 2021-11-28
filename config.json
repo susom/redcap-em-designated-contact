@@ -16,7 +16,7 @@
   ],
 
   "permissions": [
-    "redcap_every_page_top"
+      "redcap_every_page_top"
   ],
 
   "enable-every-page-hooks-on-system-pages": true,
@@ -29,6 +29,21 @@
   "no-auth-pages": [
   ],
   "crons": [
+      {
+          "cron_name": "move_projects_to_complete_status",
+          "cron_description": "This cron will run once a week on Saturday to check for projects with no DC selected, no non-suspended users and no log activity in the last 12 months.",
+          "method": "moveProjectsToComplete",
+          "cron_hour": "20",
+          "cron_minute": "10",
+          "cron_weekday": 6
+      },
+      {
+          "cron_name": "set_dc_for_new_projects",
+          "cron_description": "This cron will set the creator of the project ",
+          "method": "newProjectsNoDC",
+          "cron_hour": "20",
+          "cron_minute": "20"
+      }
   ],
 
   "system-settings": [
