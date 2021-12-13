@@ -2,8 +2,7 @@
 namespace Stanford\DesignatedContact;
 /** @var \Stanford\DesignatedContact\DesignatedContact $module **/
 
-$module_path = $module->getModulePath();
-require_once($module_path . "util/DesignatedContactUtil.php");
+require_once($module->getModulePath() . "util/DesignatedContactUtil.php");
 use REDCap;
 
 /*
@@ -25,16 +24,16 @@ $contact = isset($_POST['selected_contact']) && !empty($_POST['selected_contact'
 // Retrieve the user information from their username
 $users = retrieveUserInformation(array($contact));
 foreach($users as $userid => $userInfo) {
-    $des_contact[$pid]["project_id"] = $pid;
-    $des_contact[$pid]['contact_id']   = $userid;
-    $des_contact[$pid]["contact_firstname"] = $userInfo["contact_firstname"];
-    $des_contact[$pid]["contact_lastname"]  = $userInfo["contact_lastname"];
-    $des_contact[$pid]["contact_email"]     = $userInfo["contact_email"];
-    $des_contact[$pid]["contact_phone"]     = $userInfo["contact_phone"];
-    $des_contact[$pid]['contact_timestamp'] = date("Y-m-d H:i:s");
-    $des_contact[$pid]['designated_contact_complete'] = '2';
-    $des_contact[$pid]['force_update___1'] = '0';
-    $des_contact[$pid]['contact_notified___1'] = '1';
+    $des_contact[$pid]["project_id"]                    = $pid;
+    $des_contact[$pid]['contact_id']                    = $userid;
+    $des_contact[$pid]["contact_firstname"]             = $userInfo["contact_firstname"];
+    $des_contact[$pid]["contact_lastname"]              = $userInfo["contact_lastname"];
+    $des_contact[$pid]["contact_email"]                 = $userInfo["contact_email"];
+    $des_contact[$pid]["contact_phone"]                 = $userInfo["contact_phone"];
+    $des_contact[$pid]['contact_timestamp']             = date("Y-m-d H:i:s");
+    $des_contact[$pid]['designated_contact_complete']   = '2';
+    $des_contact[$pid]['force_update___1']              = '0';
+    $des_contact[$pid]['contact_notified___1']          = '1';
 }
 
 if (!empty($des_contact)) {
@@ -55,17 +54,9 @@ if (!empty($des_contact)) {
     $old_email = $old_contact[$pid][$pmon_event_id]['contact_email'];
     $old_name = $old_contact[$pid][$pmon_event_id]['contact_firstname'] . ' ' . $old_contact[$pid][$pmon_event_id]['contact_lastname'];
 
-    $return_status = REDCap::saveData($pmon_pid, 'json', json_encode($des_contact));
-    $module->emDebug("New des contact: " . json_encode($des_contact[$pid]));
-
-    // Save the new contact
-    if (empty($return_status['errors'])) {
-
-        // Log the event in the Log table so users have a record when this happened
-        REDCap::logEvent('New Contact', "Designated Contact changed to $contact by $current_user", null, null, null, $pid);
-
-        // Also update the designated_contact table in MariaDB so that table is up-to-date
-        update_dc_table($des_contact[$pid]);
+    // Save the new Designated Contact
+    $status = saveNewDC($pmon_pid, $des_contact[$pid], NEW_CONTACT, "Designated Contact changed to $contact by $current_user");
+    if ($status) {
 
         // Person who made the change
         $change = retrieveUserInformation(array($current_user));
@@ -108,6 +99,7 @@ if (!empty($des_contact)) {
 
                 // Put together the email body with pid and person making the change
                 $emailBody = $new_body;
+                $emailBody .= "<br><br><b>Project Details</b>:";
                 $emailBody .= "<br>Project ID:                 " . $pid;
                 $emailBody .= "<br>Project Title:              " . $project_title;
                 $emailBody .= "<br>Person who made the change: " . $changer;
@@ -130,7 +122,7 @@ if (!empty($des_contact)) {
         print 1;
     } else {
         print 0;
-        $module->emError("Cannot update Designated Contact $contact for project $pid by $current_user: ", json_encode($return_status));
+        $module->emError("Cannot update Designated Contact $contact for project $pid by $current_user");
     }
 } else {
     $module->emError("Could not find new Designated Contact $contact in DB for project $pid by $current_user");

@@ -43,6 +43,20 @@
           "method": "newProjectsNoDC",
           "cron_hour": "20",
           "cron_minute": "20"
+      },
+      {
+          "cron_name": "reassign_designated_contacts",
+          "cron_description": "This cron will reassign a new DC to projects whose DC is suspended ",
+          "method": "reassignDesignatedContacts",
+          "cron_hour": "20",
+          "cron_minute": "30"
+      },
+      {
+          "cron_name": "select_designated_contacts",
+          "cron_description": "This cron will set a DC when one has not been selected",
+          "method": "selectDesignatedContacts",
+          "cron_hour": "20",
+          "cron_minute": "40"
       }
   ],
 
@@ -106,6 +120,30 @@
           "name": "<h6><span class='text-lg badge badge-lg badge-success'>Designated Contact Description</span></h6>Enter text to appear in the designation contact information modal",
           "required": true,
           "type": "rich-text"
+      },
+      {
+          "key": "auto-assign-subject-email",
+          "name": "<h6><span class='text-lg badge badge-lg badge-success'>Subject Link for Auto-Assigned Emails</span></h6>Enter text to appear in the Subject link of emails sent to projects that have DC auto-assigned",
+          "required": true,
+          "type": "text"
+      },
+      {
+          "key": "auto-assign-body-email",
+          "name": "<h6><span class='text-lg badge badge-lg badge-success'>Body text for Auto-Assigned Emails</span></h6>Enter text to appear in the body of emails sent to projects that have DC auto-assigned",
+          "required": true,
+          "type": "text"
+      },
+      {
+          "key": "auto-reassign-subject-email",
+          "name": "<h6><span class='text-lg badge badge-lg badge-success'>Subject Link git for Re-Assigned Emails</span></h6>Enter text to appear in the Subject link of emails sent to projects that have DC re-assigned. Current DC is suspended",
+          "required": true,
+          "type": "text"
+      },
+      {
+          "key": "auto-reassign-body-email",
+          "name": "<h6><span class='text-lg badge badge-lg badge-success'>Body text for Re-Assigned Emails</span></h6>Enter text to appear in the body of emails sent to projects that have DC re-assigned",
+          "required": true,
+          "type": "text"
       }
   ],
   "project-settings": [
