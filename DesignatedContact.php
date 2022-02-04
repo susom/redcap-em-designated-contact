@@ -156,7 +156,7 @@ class DesignatedContact extends \ExternalModules\AbstractExternalModule
      * This cron job will move projects to completed status when the following list of criteria is met:
      *
      *      1. All users on the project are suspended (which mean they haven't logged into REDCap for 6 months?)
-     *      2. The last logged entry is > 18 months ago
+     *      2. The last logged entry is > 12 months ago
      *      3. The project is in development or production mode
      *      4. No designated contact selected
      *
@@ -233,6 +233,10 @@ class DesignatedContact extends \ExternalModules\AbstractExternalModule
         $body = $this->getSystemSetting('auto-reassign-body-email');
         $from_addr = $this->getSystemSetting('from-address');
 
+        // Retrieve the URLs of the DC and Suspended User wiki pages to insert into the email.
+        $dc_wiki = $this->getSystemSetting('dc-wiki-url');
+        $su_wiki = $this->getSystemSetting('susp-user-wiki-url');
+
         // Look for users who are the designated contacts for a project but are suspended
         $pids = projectsWithSuspendedDC();
         $this->emDebug("Projects with suspended DC: " . json_encode($pids));
@@ -240,7 +244,7 @@ class DesignatedContact extends \ExternalModules\AbstractExternalModule
         if (!empty($pids)) {
             $base_url = APP_PATH_WEBROOT_FULL . 'redcap_v' . REDCAP_VERSION . '/UserRights/index.php';
             [$orphaned, $reassigned] = findNewDesignatedContact($dc_pid, $dc_event_id, $pids, REASSIGN_DC,
-                                                                $base_url, $subject, $body, $from_addr);
+                                                                $base_url, $subject, $body, $from_addr, $dc_wiki, $su_wiki);
             if (count($reassigned) > 0) {
                 $this->emDebug("These are projects that are re-assigned because the selected DC is suspended: " . json_encode($reassigned));
             }
@@ -266,6 +270,9 @@ class DesignatedContact extends \ExternalModules\AbstractExternalModule
         $body = $this->getSystemSetting('auto-assign-body-email');
         $from_addr = $this->getSystemSetting('from-address');
 
+        // Retrieve the URL of the DC wiki page to insert into the email.
+        $dc_wiki = $this->getSystemSetting('dc-wiki-url');
+
         // Look for projects who are not deleted, not completed and have no designated contacts
         $pids = projectsWithNoDC();
         $this->emDebug("Projects with no Designated Contacts: " . json_encode($pids));
@@ -273,7 +280,7 @@ class DesignatedContact extends \ExternalModules\AbstractExternalModule
         if (!empty($pids)) {
             $base_url = APP_PATH_WEBROOT_FULL . 'redcap_v' . REDCAP_VERSION . '/UserRights/index.php';
             [$orphaned, $reassigned] = findNewDesignatedContact($dc_pid, $dc_event_id, $pids, ASSIGN_DC,
-                                        $base_url, $subject, $body, $from_addr);
+                                        $base_url, $subject, $body, $from_addr,$dc_wiki, null);
             if (count($reassigned) > 0) {
                 $this->emDebug("These are projects that are assigned a DC because none was selected: " . json_encode($reassigned));
             }

@@ -144,6 +144,18 @@
           "name": "<h6><span class='text-lg badge badge-lg badge-success'>Body text for Re-Assigned Emails</span></h6>Enter text to appear in the body of emails sent to projects that have DC re-assigned",
           "required": true,
           "type": "text"
+      },
+      {
+          "key": "dc-wiki-url",
+          "name": "<h6><span class='text-lg badge badge-lg badge-success'>URL of wiki page which describes Designated Contacts</span>",
+          "required": false,
+          "type": "text"
+      },
+      {
+          "key": "susp-user-wiki-url",
+          "name": "<h6><span class='text-lg badge badge-lg badge-success'>URL of wiki page which describes Suspended Users</span></h6>",
+          "required": false,
+          "type": "text"
       }
   ],
   "project-settings": [

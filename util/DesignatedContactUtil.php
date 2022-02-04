@@ -485,7 +485,8 @@ function projectsWithNoDC() {
  * @param $from_addr
  * @return bool
  */
-function findNewDesignatedContact($dc_pid, $dc_event_id, $pids, $action, $base_url, $email_subject, $email_body, $from_addr) {
+function findNewDesignatedContact($dc_pid, $dc_event_id, $pids, $action, $base_url, $email_subject, $email_body, $from_addr,
+                                    $dc_url =  null, $su_url = null) {
 
     $updated_statuses = array();
     $orphaned = array();
@@ -555,7 +556,7 @@ function findNewDesignatedContact($dc_pid, $dc_event_id, $pids, $action, $base_u
                 // Notify the new DC
                 $updated_statuses[] = $pid;
                 $status = sendEmailNotifications($pid, $user_info[$new_user], $data[$pid][$dc_event_id], $action, $base_url,
-                                $email_subject, $email_body, $from_addr);
+                                $email_subject, $email_body, $from_addr, $dc_url, $su_url);
             }
         }
     }
@@ -576,10 +577,11 @@ function findNewDesignatedContact($dc_pid, $dc_event_id, $pids, $action, $base_u
  * @param $subject
  * @param $body
  * @param $from_addr
+ * @param $dc_url (optional: to be added to email if provided)
+ * @param $su_url (optional: to be added to email if provided)
  * @return bool
  */
-function sendEmailNotifications($pid, $new_user, $old_user, $action, $base_url, $subject, $body, $from_addr) {
-
+function sendEmailNotifications($pid, $new_user, $old_user, $action, $base_url, $subject, $body, $from_addr, $dc_url, $su_url) {
 
     // Find out who we are sending email to
     $new_dc_name    = $new_user['contact_firstname'] . ' ' . $new_user['contact_lastname'];
@@ -607,7 +609,17 @@ function sendEmailNotifications($pid, $new_user, $old_user, $action, $base_url, 
     if (!empty($old_dc_name)) {
         $email_body .= "Old Designated Contact: " . $old_dc_name . "<br>";
     }
-    $email_body .= "Project Link: <a href='" . $url . "'>$url</a><br>";
+    $email_body .= "Project Link: <a href='" . $url . "'>$url</a><br><br>";
+    if (!empty($dc_url) or !empty($su_url)) {
+        $email_body .= "<b>F.A.Q. Links:</b><br>";
+        if (!empty($dc_url)) {
+            $email_body .= "<a href='" . $dc_url . "'>What is a Designated Contact?</a><br>";
+        }
+        if (!empty($su_url)) {
+            $email_body .= "<a href='" . $su_url . "'>Why is my account suspended?</a><br>";
+        }
+    }
+
 
     // Send the email
     $status = REDCap::email($email_address, $from_addr, $subject, $email_body);
