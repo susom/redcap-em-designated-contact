@@ -238,7 +238,7 @@ function noContactSelectedList($user) {
                     where  rp.completed_time is null
                     and ifnull(ruro.user_rights, rur.user_rights) = 1
                     and rur.expiration is null
-                    and rur.project_id not in (select project_id from designated_contact_selected)
+                    and rur.project_id not in (select project_id from " . DB_TABLE . ")
                     and rur.username='" . $user . "'";
 
     $records = array();
@@ -259,11 +259,11 @@ function noContactSelectedList($user) {
 function updateSuspendedUserTable() {
 
     // Drop the temp table if it exists
-    $db_query = 'drop table if exists ly_dc_suspended_users';
+    $db_query = 'drop table if exists ' . SUSPEND_TABLE;
     $q = db_query($db_query);
 
     // Create a new temporary table with a list of projects with all suspended users
-    $db_query = 'create table ly_dc_suspended_users as
+    $db_query = 'create table ' . SUSPEND_TABLE . ' as
             select *
             from (
                 select rur.project_id,
@@ -281,7 +281,7 @@ function updateSuspendedUserTable() {
                     and ifnull(ruro.user_rights, rur.user_rights) = 1
                     and rur.expiration is null
                     and rur.project_id not in (
-                                select project_id from designated_contact_selected
+                                select project_id from ' . DB_TABLE . '
                     )
                 group by rur.project_id
             ) as users
@@ -290,7 +290,7 @@ function updateSuspendedUserTable() {
 
     //Find the log file names that we need to search for the last log event timestamp
     $db_query = 'select log_event_table
-                            from ly_dc_suspended_users
+                            from ' . SUSPEND_TABLE . '
                             group by log_event_table';
     $q1 = db_query($db_query);
     $log_table_names = array();
@@ -316,7 +316,7 @@ function lastLogDate($log_table_name) {
         "select project_id, status, last_log_time, now() as completed_date
                     from (
                         select ur.project_id, ur.status, max(str_to_date(le.ts, '%Y%m%d%H%i%s')) as last_log_time
-                                from ly_dc_suspended_users ur
+                                from " . SUSPEND_TABLE . " ur
                                     join " . $log_table_name . " le on ur.project_id = le.project_id
                                 where ur.not_suspended = 0
                                 and ur.log_event_table = '" . $log_table_name. "'
@@ -395,7 +395,7 @@ function newProjectSetDC($dc_pid) {
         from redcap_projects rp
             join redcap_user_information rui on rp.created_by = rui.ui_id
         where rp.creation_time between DATE_SUB(now(), INTERVAL 3 DAY) and now()
-        and rp.project_id not in (select project_id from designated_contact_selected)';
+        and rp.project_id not in (select project_id from ' . DB_TABLE . ')';
     $q = db_query($sql);
     while ($proj_and_creators = db_fetch_assoc($q)) {
 
@@ -429,7 +429,7 @@ function projectsWithSuspendedDC() {
 
     // Find the project IDs who have Designated Contacts who are suspended
     $sql = 'select dcs.project_id
-                    from designated_contact_selected dcs
+                    from ' . DB_TABLE . ' dcs
                         join redcap_user_information rui on rui.username = dcs.contact_userid
                     and rui.user_suspended_time is not null';
     $q = db_query($sql);
@@ -457,7 +457,7 @@ function projectsWithNoDC() {
                     where date_deleted is null
                     and completed_time is null
                     and project_id not in (
-                        select project_id from  designated_contact_selected
+                        select project_id from  ' . DB_TABLE . '
                     )';
     $q = db_query($sql);
     while ($no_dc = db_fetch_assoc($q)) {
@@ -504,7 +504,19 @@ function findNewDesignatedContact($dc_pid, $dc_event_id, $pids, $action, $base_u
         if (count($users) > 1) {
             // If there are more than 1 user that has User Rights, see which has the last log entry
             $latest_user = findUserWithLastLoggedEvent($pid, $users);
-            $new_user = $latest_user[0];
+            if (!is_null($latest_user[0]) and !empty($latest_user)) {
+
+                $new_user = $latest_user[0];
+
+            } else {
+
+                // if the latest_user is empty, that means that none of the active users have any log events.
+                // Since they are still active, we will get the user who last logged into REDCap and set that person
+                // as designated contact.
+
+                $new_user = findUserWhoLastLoggedIn($users);
+            }
+
         } else if (count($users) == 1) {
             // If there is only one user with User Rights, they are automatically DC.
             $new_user = $users[0];
@@ -668,6 +680,27 @@ function findUserWithLastLoggedEvent($pid, $users) {
     return $new_user;
 }
 
+/**
+ * This function finds the user who logged into REDCap most recently.
+ *
+ * @param $users
+ * @return array|false|mixed|null
+ */
+function findUserWhoLastLoggedIn($users) {
+
+    // Retrieve the log entries for the users with
+    $user_list = implode("','", $users);
+    $sql = "select username from redcap_user_information
+                where username in ('" . $user_list . "')
+                order by user_lastlogin desc
+                limit 1";
+    $q = db_query($sql);
+    $new_user = db_fetch_row($q);
+
+    return $new_user;
+}
+
+
 
 /**
  * This is an utility function which will perform all the actions needed when a new designated contact is saved.  It will
@@ -685,7 +718,7 @@ function saveNewDC($dc_pid, $project, $log_action, $log_description) {
     $status = true;
 
     // Save the new user into the designated_contact_selected DB table
-    $sql = 'replace into designated_contact_selected
+    $sql = 'replace into ' . DB_TABLE . '
             (project_id, contact_first_name, contact_last_name, contact_email, contact_userid, last_update_date, contact_ui_id)
                 select ' . $project['project_id'] . ', "' . $project['contact_firstname'] . '", "' .
         $project['contact_lastname'] . '", "' . $project['contact_email'] . '", "' .

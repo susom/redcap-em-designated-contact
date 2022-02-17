@@ -19,6 +19,8 @@ class DesignatedContact extends \ExternalModules\AbstractExternalModule
         define('ASSIGN_DC',         'Auto-selected');
         define('ORPHANED_DC',       'Orphaned');
         define('NEW_CONTACT',       'New Contact');
+        define('DB_TABLE',          'designated_contact_selected');
+        define('SUSPEND_TABLE',     'designated_contact_suspended_users');
         parent::__construct();
     }
 
@@ -155,7 +157,7 @@ class DesignatedContact extends \ExternalModules\AbstractExternalModule
     /**
      * This cron job will move projects to completed status when the following list of criteria is met:
      *
-     *      1. All users on the project are suspended (which mean they haven't logged into REDCap for 6 months?)
+     *      1. All users on the project are suspended (which mean they haven't logged into REDCap for 12 months)
      *      2. The last logged entry is > 12 months ago
      *      3. The project is in development or production mode
      *      4. No designated contact selected
