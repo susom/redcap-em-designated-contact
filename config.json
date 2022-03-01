@@ -22,10 +22,16 @@
   "enable-every-page-hooks-on-system-pages": true,
 
   "links": {
-    "project": [
-    ]
+      "project": [
+      ],
+      "control-center": [
+          {
+              "name": "Designated Contact Reports",
+              "icon": "missing_active",
+              "url": "pages/dcReports.php"
+          }
+      ]
   },
-
   "no-auth-pages": [
   ],
   "crons": [
