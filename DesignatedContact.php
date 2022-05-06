@@ -295,4 +295,24 @@ class DesignatedContact extends \ExternalModules\AbstractExternalModule
     }
 
 
+    /**
+     *
+     * Need to override the EM method to limit display of EM link
+     *
+     * @param $project_id
+     * @param $link
+     * @return mixed
+     */
+    public function redcap_module_link_check_display($project_id, $link)
+    {
+        //limit the logging link to Super Users
+        if ($link['key'] = 'adminLogging') {
+            if (SUPER_USER) {
+                return $link;
+            } else {
+                return null;
+            }
+        }
+        return $link;
+    }
 }

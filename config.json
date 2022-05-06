@@ -16,13 +16,21 @@
   ],
 
   "permissions": [
-      "redcap_every_page_top"
+      "redcap_every_page_top",
+      "redcap_module_link_check_display"
   ],
 
   "enable-every-page-hooks-on-system-pages": true,
 
   "links": {
       "project": [
+          {
+              "name": "SUPERUSER: Admin logging",
+              "key" : "adminLogging",
+              "icon": "missing_active",
+              "url": "pages/adminLogging.php",
+              "show-header-and-footer": true
+          }
       ],
       "control-center": [
           {
