@@ -13,9 +13,8 @@ if (isset($_POST['add_logging'])) {
         die("No logmsg set.");
     }
     $log_msg = $_POST['logmsg'];
-    REDCap::logEvent(USERID . ":" . $log_msg);
+    REDCap::logEvent($log_msg);
 
-    exit;
 }
 
 ?>
