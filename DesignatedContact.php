@@ -315,4 +315,22 @@ class DesignatedContact extends \ExternalModules\AbstractExternalModule
         }
         return $link;
     }
+
+    /**
+     * Get Designated Contact for this project
+     *
+     * @param $project_id
+     * @return mixed
+     */
+    public function getDC($project_id) {
+        $sql = sprintf("select contact_email from designated_contact_selected where project_id = '%s'",
+                       prep($project_id));
+        $q = db_query($sql);
+        $fetch_row = db_fetch_row($q);
+        $dc_email = $fetch_row[0];
+        return $dc_email;
+
+    }
+
+
 }

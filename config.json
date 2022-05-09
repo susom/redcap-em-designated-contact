@@ -27,7 +27,7 @@
           {
               "name": "SUPERUSER: Admin logging",
               "key" : "adminLogging",
-              "icon": "missing_active",
+              "icon": "redcap-logo-letter",
               "url": "pages/adminLogging.php",
               "show-header-and-footer": true
           }
