@@ -82,6 +82,26 @@
           "type": "checkbox"
       },
       {
+        "key": "email-template",
+        "name": "<h6><span class='text-lg badge badge-lg badge-success'>Email Templates</span></h6>Create different email templates for unique purposes",
+        "type": "sub_settings",
+        "repeatable": true,
+        "sub_settings": [
+          {
+            "key": "email-template-title",
+            "name": "<h6><span class='text-lg badge badge-lg badge-success'>Email Template Title</span></h6>A descriptive name for this email template",
+            "required": false,
+            "type": "text"
+          },
+          {
+            "key": "email-template-body",
+            "name": "<h6><span class='text-lg badge badge-lg badge-success'>Email Template Body</span></h6>",
+            "required": false,
+            "type": "rich-text"
+          }
+        ]
+      },
+      {
           "key": "designated-contact-pid",
           "name": "<b>Designated Contact project id</b><br>REDCap project which stores designated contact data",
           "required": true,
