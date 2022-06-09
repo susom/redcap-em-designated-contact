@@ -1,0 +1,35 @@
+textarea {
+    border-radius: 4px;
+}
+
+textarea:focus, textarea, input, input:focus, textarea:active, input:active {
+    outline: none !important;
+}
+
+select {
+    width: 50%;
+}
+
+.active {
+    border-color: #F4BB89;
+    background-color: #F6A45B;
+    color: white;
+}
+
+input {
+    border-radius: 5px;
+    border: none;
+    padding: 8px;
+}
+
+input[type=button]:hover{
+    border-color: #F4BB89;
+    background-color: #F6A45B;
+    color: white;
+}
+
+input[type=submit]:hover{
+    border-color: #0078FF;
+    background-color: #288DFF;
+    color: white;
+}
