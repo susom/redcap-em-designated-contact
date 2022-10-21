@@ -2,7 +2,6 @@
 namespace Stanford\DesignatedContact;
 /** @var \Stanford\DesignatedContact\DesignatedContact $module **/
 
-require_once($module->getModulePath() . "util/DesignatedContactUtil.php");
 use REDCap;
 
 /*
@@ -15,14 +14,14 @@ use REDCap;
  * project where a new contact was selected..
  */
 
-$current_user = USERID;
+$current_user = $module->getUser()->getUsername();
 $des_contact = array();
 
-$pid = isset($_GET['pid']) && !empty($_GET['pid']) ? $_GET['pid'] : null;
-$contact = isset($_POST['selected_contact']) && !empty($_POST['selected_contact']) ? $_POST['selected_contact'] : null;
+$pid = isset($_GET['pid']) && !empty($_GET['pid']) ? filter_var($_GET['pid'], FILTER_SANITIZE_NUMBER_INT) : null;
+$contact = isset($_POST['selected_contact']) && !empty($_POST['selected_contact']) ? filter_var($_POST['selected_contact'], FILTER_SANITIZE_STRING) : null;
 
 // Retrieve the user information from their username
-$users = retrieveUserInformation(array($contact));
+$users = $module->retrieveUserInformation(array($contact));
 foreach($users as $userid => $userInfo) {
     $des_contact[$pid]["project_id"]                    = $pid;
     $des_contact[$pid]['contact_id']                    = $userid;
@@ -41,7 +40,7 @@ if (!empty($des_contact)) {
     // Find the designated contact project where the data is stored
     $pmon_pid = $module->getSystemSetting('designated-contact-pid');
     $pmon_event_id = $module->getSystemSetting('designated-contact-event-id');
-    $project_title = REDCap::getProjectTitle();
+    $project_title = \REDCap::getProjectTitle();
 
     // New contact
     $new_email = $des_contact[$pid]["contact_email"];
@@ -49,17 +48,17 @@ if (!empty($des_contact)) {
 
     // Old contact
     $fields = array('contact_id', 'contact_email', 'contact_firstname', 'contact_lastname');
-    $old_contact = REDCap::getData($pmon_pid, 'array', $pid, $fields, $pmon_event_id);
+    $old_contact = \REDCap::getData($pmon_pid, 'array', $pid, $fields, $pmon_event_id);
     $old_user = $old_contact[$pid][$pmon_event_id]['contact_id'];
     $old_email = $old_contact[$pid][$pmon_event_id]['contact_email'];
     $old_name = $old_contact[$pid][$pmon_event_id]['contact_firstname'] . ' ' . $old_contact[$pid][$pmon_event_id]['contact_lastname'];
 
     // Save the new Designated Contact
-    $status = saveNewDC($pmon_pid, $des_contact[$pid], NEW_CONTACT, "Designated Contact changed to $contact by $current_user");
+    $status = $module->saveNewDC($pmon_pid, $des_contact[$pid], NEW_CONTACT, "Designated Contact changed to $contact by $current_user");
     if ($status) {
 
         // Person who made the change
-        $change = retrieveUserInformation(array($current_user));
+        $change = $module->retrieveUserInformation(array($current_user));
         $changer = $change[$current_user]["contact_firstname"] . ' ' . $change[$current_user]["contact_lastname"];
 
         // Retrieve the verbiage, from the system settings, for the emails that will be sent to the new DC
@@ -85,7 +84,7 @@ if (!empty($des_contact)) {
 
                 // Send email to the old contact
                 if (!empty($old_email)) {
-                    $status = REDCap::email($old_email, $from_email, $old_subject, $emailBody);
+                    $status = \REDCap::email($old_email, $from_email, $old_subject, $emailBody);
                 } else {
                     $module->emError("Cannot send email to $old_user that $current_user has removed them from Designated Contact for project $pid");
                 }
@@ -108,7 +107,7 @@ if (!empty($des_contact)) {
                 }
                 $emailBody .= "<br>Designated Contact Added:   " . $new_name;
 
-                $status = REDCap::email($new_email, $from_email, $new_subject, $emailBody);
+                $status = \REDCap::email($new_email, $from_email, $new_subject, $emailBody);
                 if (!$status) {
                     $module->emError("Email did not get sent to $new_email for project $pid");
                 } else {

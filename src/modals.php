@@ -37,11 +37,13 @@ function saveNewContact() {
     var new_contact = document.getElementById("selected_contact").value;
     var current_page = window.location.href;
     var url = document.getElementById("url").value;
+    var csrf_token = document.getElementById("redcap_csrf_token").value;
 
     $.ajax({
         type: "POST",
         url: url,
-        data: {"selected_contact": new_contact},
+        data: {"selected_contact": new_contact,
+               "redcap_csrf_token" : csrf_token},
         success: function(data, textStatus, jqXHR) {
             $('#contactmodal').modal('hide');
             window.location.replace(current_page);

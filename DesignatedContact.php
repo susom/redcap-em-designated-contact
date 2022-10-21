@@ -3,10 +3,11 @@
 namespace Stanford\DesignatedContact;
 
 require_once "emLoggerTrait.php";
-require_once "./util/DesignatedContactUtil.php";
+require_once "./classes/getModal.php";
+require_once "./classes/newContact.php";
 
 use REDCap;
-
+use Exception;
 
 class DesignatedContact extends \ExternalModules\AbstractExternalModule
 {
@@ -37,16 +38,17 @@ class DesignatedContact extends \ExternalModules\AbstractExternalModule
      */
     function redcap_every_page_top($project_id=null) {
 
-        $user = USERID;
-        if (empty($user)) {
-            return;
-        }
-
         /*
          * This section will place the Designated Contact icon next to the project title on the My Projects page.
          */
         if (((PAGE === 'Home/index.php') || (PAGE === 'index.php'))
                 && ($_GET["action"] == "myprojects")) {
+
+            // Find the user
+            $user = $this->getUser()->getUsername();
+            if (empty($user)) {
+                return;
+            }
 
             // Find the designated contact project where the data is stored
             $pmon_pid = $this->getSystemSetting('designated-contact-pid');
@@ -56,12 +58,17 @@ class DesignatedContact extends \ExternalModules\AbstractExternalModule
             }
 
             // Find the projects that this user is the designated contact and put the icon next to the name
-            $projects = contactProjectList($user, $pmon_pid, $pmon_event_id);
-            $this->emDebug("Projects for this user: " . json_encode($projects));
+            try {
+                $contacts = new newContact($this);
+                $projects = $contacts->contactProjectList($user, $pmon_pid, $pmon_event_id);
+                $this->emDebug("Projects for this user: " . json_encode($projects));
 
-            // Find the projects that this user has User Rights but no designated contact was selected
-            $no_dc_projects = noContactSelectedList($user);
-            $this->emDebug("No DC projects: " . json_encode($no_dc_projects));
+                // Find the projects that this user has User Rights but no designated contact was selected
+                $no_dc_projects = $contacts->noContactSelectedList($user);
+                $this->emDebug("No DC projects: " . json_encode($no_dc_projects));
+            } catch (Exception $ex) {
+                $this->emError("Exception occurred while trying to place icons on Project page", $ex->getMessage());
+            }
 
             // Add the javascript which will inject the html into the page to display the DC icons
             require_once $this->getModulePath() . "src/designated_contact_icon.php";
@@ -78,9 +85,20 @@ class DesignatedContact extends \ExternalModules\AbstractExternalModule
          */
         if (PAGE === 'UserRights/index.php' || PAGE === 'ProjectSetup/index.php') {
 
+            // Find the current user
+            $user = $this->getUser()->getUsername();
+            if (empty($user)) {
+                return;
+            }
+
             // See if this user has User Rights. If not, just exit
-            $users = getUsersWithUserRights($project_id);
-            $this->emDebug("These are users with User Rights for project $project_id: " . json_encode($users));
+            try {
+                $contacts = new newContact($this);
+                $users = $contacts->getUsersWithUserRights($project_id);
+                $this->emDebug("These are users with User Rights for project $project_id: " . json_encode($users));
+            } catch (Exception $ex) {
+                $this->emError("Exception occurred when retrieving users with user rights", $ex->getMessage());
+            }
             if (in_array($user, $users) || (defined("SUPER_USER") && SUPER_USER)) {
 
                 // Find the designated contact project where the data is stored. If it is not setup yet, exit
@@ -92,7 +110,7 @@ class DesignatedContact extends \ExternalModules\AbstractExternalModule
 
                 // Retrieve the designated contact in the Project monitoring project
                 $contact_fields = array('contact_id', 'contact_firstname', 'contact_lastname', 'contact_timestamp', 'force_update');
-                $data = REDCap::getData($pmon_pid, 'array', $project_id, $contact_fields);
+                $data = \REDCap::getData($pmon_pid, 'array', $project_id, $contact_fields);
                 $current_contact = $data[$project_id][$pmon_event_id]['contact_id'];
                 $force_update = $data[$project_id][$pmon_event_id]['force_update']['1'];
 
@@ -123,7 +141,7 @@ class DesignatedContact extends \ExternalModules\AbstractExternalModule
                 }
 
                 // Retrieve the list of other selectable contacts
-                $availableContacts = retrieveUserInformation($users);
+                $availableContacts = $this->retrieveUserInformation($users);
 
                 // This is the Designated Contact modal which is used to change the person designated for that role.
                 if ((PAGE === 'ProjectSetup/index.php') && (!empty($current_contact)) && (empty($force_update))) {
@@ -132,14 +150,19 @@ class DesignatedContact extends \ExternalModules\AbstractExternalModule
 
                     $url = $this->getUrl("src/saveNewContact.php");
                     $dc_description = $this->getSystemSetting('dc_description');
+                    $token = $this->getCSRFToken();
 
                     // Create a new element to hold the information and designated contact modals
                     $userList = '<div id="contactDiv" style="margin:20px 0;font-weight:normal;padding:10px; border:1px solid #ccc; max-width:' . $max_width . 'px; background-color:' . $bg_color . ';" >';
 
-                    $userList .= getInfoModal($dc_description);
-                    $userList .= getDCModal($availableContacts, $current_contact, $user,
-                        $current_person, $contact_timestamp, $button_text, $url);
-
+                    try {
+                        $modal = new GetModal();
+                        $userList .= $modal->getInfoModal($dc_description);
+                        $userList .= $modal->getDCModal($availableContacts, $current_contact, $user,
+                            $current_person, $contact_timestamp, $button_text, $url, $token);
+                    } catch (Exception $ex) {
+                        $this->emError("Error retrieving modal information: " . $ex->getMessage());
+                    }
                     // Close off the new div
                     $userList .= '</div>';
 
@@ -173,27 +196,32 @@ class DesignatedContact extends \ExternalModules\AbstractExternalModule
 
         // Update the temporary table which looks at all projects with no current users and retrieve all
         // the log tables we need to look at to see when the last log event was
-        $log_tables = updateSuspendedUserTable();
-        $this->emDebug("Log tables to query against: " . json_encode($log_tables));
+        try {
+            $contacts = new newContact($this);
+            $log_tables = $contacts->updateSuspendedUserTable();
+            $this->emDebug("Log tables to query against: " . json_encode($log_tables));
 
-        foreach($log_tables as $log_table => $log_table_name) {
+            foreach ($log_tables as $log_table => $log_table_name) {
 
-            // Cross reference the suspended user table with the log event table to see which projects'
-            // last log entry was > 12 months ago
-            $project_ids = lastLogDate($log_table_name['log_event_table']);
-            $this->emDebug("project ids: " . json_encode($project_ids));
+                // Cross reference the suspended user table with the log event table to see which projects'
+                // last log entry was > 12 months ago
+                $project_ids = $contacts->lastLogDate($log_table_name['log_event_table']);
+                $this->emDebug("project ids: " . json_encode($project_ids));
 
-            foreach ($project_ids as $pid) {
-                $this->emDebug("This project will be moved to Complete: " . $pid);
+                foreach ($project_ids as $pid) {
+                    $this->emDebug("This project will be moved to Complete: " . $pid);
 
-                //These are the project to move to Complete status
-                $status = moveToComplete($dc_pid, $pid);
-                if ($status) {
-                    $this->emDebug("Project $pid was automatically moved to Completed status");
-                } else {
-                    $this->emError("Project $pid could not be automatically moved to Completed status");
+                    //These are the project to move to Complete status
+                    $status = $contacts->moveToComplete($dc_pid, $pid);
+                    if ($status) {
+                        $this->emDebug("Project $pid was automatically moved to Completed status");
+                    } else {
+                        $this->emError("Project $pid could not be automatically moved to Completed status");
+                    }
                 }
             }
+        } catch (Exception $ex) {
+            $this->emError("Exception thrown in moveProjectsToComplete", $ex->getMessage());
         }
 
         $this->emDebug("Exiting CRON: moveProjectsToComplete");
@@ -213,8 +241,13 @@ class DesignatedContact extends \ExternalModules\AbstractExternalModule
         $dc_pid = $this->getSystemSetting('designated-contact-pid');
 
         // Find the new projects created in the last 2 days that do not have DC selected yet
-        $new_pids = newProjectSetDC($dc_pid);
-        $this->emDebug("These are the projects where the automated cron set the designated contact: " . json_encode($new_pids));
+        try {
+            $contacts = new newContact($this);
+            $new_pids = $contacts->newProjectSetDC($dc_pid);
+            $this->emDebug("These are the projects where the automated cron set the designated contact: " . json_encode($new_pids));
+        } catch (Exception $ex) {
+            $this->emError("Exception throw in newProjectsNoDC", $ex->getMessage());
+        }
 
         $this->emDebug("Exiting CRON: newProjectsNoDC");
     }
@@ -240,20 +273,26 @@ class DesignatedContact extends \ExternalModules\AbstractExternalModule
         $su_wiki = $this->getSystemSetting('susp-user-wiki-url');
 
         // Look for users who are the designated contacts for a project but are suspended
-        $pids = projectsWithSuspendedDC();
-        $this->emDebug("Projects with suspended DC: " . json_encode($pids));
+        try {
+            $contacts = new newContact($this);
+            $pids = $contacts->projectsWithSuspendedDC();
+            $this->emDebug("Projects with suspended DC: " . json_encode($pids));
 
-        if (!empty($pids)) {
-            $base_url = APP_PATH_WEBROOT_FULL . 'redcap_v' . REDCAP_VERSION . '/UserRights/index.php';
-            [$orphaned, $reassigned] = findNewDesignatedContact($dc_pid, $dc_event_id, $pids, REASSIGN_DC,
-                                                                $base_url, $subject, $body, $from_addr, $dc_wiki, $su_wiki);
-            if (count($reassigned) > 0) {
-                $this->emDebug("These are projects that are re-assigned because the selected DC is suspended: " . json_encode($reassigned));
+            if (!empty($pids)) {
+                $base_url = APP_PATH_WEBROOT_FULL . 'redcap_v' . REDCAP_VERSION . '/UserRights/index.php';
+                [$orphaned, $reassigned] = $contacts->findNewDesignatedContact($dc_pid, $dc_event_id, $pids, REASSIGN_DC,
+                    $base_url, $subject, $body, $from_addr, $dc_wiki, $su_wiki);
+                if (count($reassigned) > 0) {
+                    $this->emDebug("These are projects that are re-assigned because the selected DC is suspended: " . json_encode($reassigned));
+                }
+                if (count($orphaned) > 0) {
+                    $this->emDebug("These are projects that are orphaned because there are no users available to set as DC: " . json_encode($orphaned));
+                }
             }
-            if (count($orphaned) > 0) {
-                $this->emDebug("These are projects that are orphaned because there are no users available to set as DC: " . json_encode($orphaned));
-            }
+        } catch (Exception $ex) {
+            $this->emError("Exception thrown in reassignDesignatedContacts", $ex->getMessage());
         }
+
         $this->emDebug("Exiting CRON: reassignDesignatedContacts");
     }
 
@@ -276,19 +315,24 @@ class DesignatedContact extends \ExternalModules\AbstractExternalModule
         $dc_wiki = $this->getSystemSetting('dc-wiki-url');
 
         // Look for projects who are not deleted, not completed and have no designated contacts
-        $pids = projectsWithNoDC();
-        $this->emDebug("Projects with no Designated Contacts: " . json_encode($pids));
+        try {
+            $contacts = new newContact($this);
+            $pids = $contacts->projectsWithNoDC();
+            $this->emDebug("Projects with no Designated Contacts: " . json_encode($pids));
 
-        if (!empty($pids)) {
-            $base_url = APP_PATH_WEBROOT_FULL . 'redcap_v' . REDCAP_VERSION . '/UserRights/index.php';
-            [$orphaned, $reassigned] = findNewDesignatedContact($dc_pid, $dc_event_id, $pids, ASSIGN_DC,
-                                        $base_url, $subject, $body, $from_addr,$dc_wiki, null);
-            if (count($reassigned) > 0) {
-                $this->emDebug("These are projects that are assigned a DC because none was selected: " . json_encode($reassigned));
+            if (!empty($pids)) {
+                $base_url = APP_PATH_WEBROOT_FULL . 'redcap_v' . REDCAP_VERSION . '/UserRights/index.php';
+                [$orphaned, $reassigned] = $contacts->findNewDesignatedContact($dc_pid, $dc_event_id, $pids, ASSIGN_DC,
+                    $base_url, $subject, $body, $from_addr, $dc_wiki, null);
+                if (count($reassigned) > 0) {
+                    $this->emDebug("These are projects that are assigned a DC because none was selected: " . json_encode($reassigned));
+                }
+                if (count($orphaned) > 0) {
+                    $this->emDebug("These are projects that are orphaned because there are no users available to set as DC: " . json_encode($orphaned));
+                }
             }
-            if (count($orphaned) > 0) {
-                $this->emDebug("These are projects that are orphaned because there are no users available to set as DC: " . json_encode($orphaned));
-            }
+        } catch (Exception $ex) {
+            $this->emError("Exception throw in selectDesignatedContacts", $ex->getMessage());
         }
 
         $this->emDebug("Exiting CRON: selectDesignatedContact");
@@ -330,6 +374,85 @@ class DesignatedContact extends \ExternalModules\AbstractExternalModule
         $dc_email = $fetch_row[0];
         return $dc_email;
 
+    }
+
+    /**
+     * Given an array of userids, this function will return the user name and contact info for each user.
+     *
+     * @param $users - array of userIds
+     * @return array - user information associated with the userId
+     */
+    public function retrieveUserInformation($users) {
+
+        $contact = array();
+        $this->emDebug("User: " . json_encode($users));
+
+        // Retrieve the rest of the data for this contact
+        $sql = "select user_email, user_phone, user_firstname, user_lastname, username, ui_id " .
+            "    from redcap_user_information " .
+            "    where username in ('" . implode("','", $users) . "')";
+        $q = db_query($sql);
+        while ($current_db_row = db_fetch_assoc($q)) {
+            $user = $current_db_row['username'];
+            $contact[$user]['contact_id'] = $user;
+            $contact[$user]['contact_ui_id'] = $current_db_row['ui_id'];
+            $contact[$user]["contact_firstname"] = $current_db_row["user_firstname"];
+            $contact[$user]["contact_lastname"] = $current_db_row["user_lastname"];
+            $contact[$user]["contact_email"] = $current_db_row["user_email"];
+            $contact[$user]["contact_phone"] = $current_db_row["user_phone"];
+        }
+
+        return $contact;
+
+    }
+
+    /**
+     * This is an utility function which will perform all the actions needed when a new designated contact is saved.  It will
+     * update the database table designated_contact_selected, it will update the REDCap project 22052 with the new contact
+     * and it will create a log entry in the project.
+     *
+     * @param $dc_pid
+     * @param $project
+     * @param $log_action
+     * @param $log_description
+     * @return bool
+     */
+    public function saveNewDC($dc_pid, $project, $log_action, $log_description) {
+
+        $status = true;
+
+        if (empty($project['contact_id'])) {
+            $this->emError("Contact ID for new DC is empty for log action " . $log_action .
+                            " and log description " . $log_description);
+            return false;
+        }
+
+        // Save the new user into the designated_contact_selected DB table
+        $sql = 'replace into ' . DB_TABLE . '
+            (project_id, contact_first_name, contact_last_name, contact_email, contact_userid, last_update_date, contact_ui_id)
+                select ' . $project['project_id'] . ', "' . $project['contact_firstname'] . '", "' .
+            $project['contact_lastname'] . '", "' . $project['contact_email'] . '", "' .
+            $project['contact_id'] . '", "' . $project['contact_timestamp'] . '", ' .
+            (empty($project['contact_ui_id']) ? '""': $project['contact_ui_id']);
+        $q2 = db_query($sql);
+        if ($q2) {
+
+            // The database table was updated, now update the REDCap project
+            $response = \REDCap::saveData($dc_pid, 'json', json_encode(array($project)));
+            if (!empty($response['errors'])) {
+                $status = false;
+            }
+
+            // Make an entry in the REDCap log file that the designated contact was selected
+            \REDCap::logEvent($log_action, $log_description, null, null, null, $project['project_id']);
+
+        } else {
+
+            // If the database update did not work, send back an error status
+            $status = false;
+        }
+
+        return $status;
     }
 
 
