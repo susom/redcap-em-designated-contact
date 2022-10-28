@@ -45,7 +45,14 @@ class DesignatedContact extends \ExternalModules\AbstractExternalModule
                 && ($_GET["action"] == "myprojects")) {
 
             // Find the user
-            $user = $this->getUser()->getUsername();
+            $user = '';
+            try {
+                if (defined("USERID")) {
+                    $user = $this->getUser()->getUsername();
+                }
+            } catch (Exception $ex) {
+                $this->emError("Trying to retrieve username on MyProjects page but no user defined: " . PAGE);
+            }
             if (empty($user)) {
                 return;
             }
@@ -61,11 +68,11 @@ class DesignatedContact extends \ExternalModules\AbstractExternalModule
             try {
                 $contacts = new newContact($this);
                 $projects = $contacts->contactProjectList($user, $pmon_pid, $pmon_event_id);
-                $this->emDebug("Projects for this user: " . json_encode($projects));
+                //$this->emDebug("Projects for this user: " . json_encode($projects));
 
                 // Find the projects that this user has User Rights but no designated contact was selected
                 $no_dc_projects = $contacts->noContactSelectedList($user);
-                $this->emDebug("No DC projects: " . json_encode($no_dc_projects));
+                //$this->emDebug("No DC projects: " . json_encode($no_dc_projects));
             } catch (Exception $ex) {
                 $this->emError("Exception occurred while trying to place icons on Project page", $ex->getMessage());
             }
@@ -86,7 +93,14 @@ class DesignatedContact extends \ExternalModules\AbstractExternalModule
         if (PAGE === 'UserRights/index.php' || PAGE === 'ProjectSetup/index.php') {
 
             // Find the current user
-            $user = $this->getUser()->getUsername();
+            $user = '';
+            try {
+                if (defined("USERID")) {
+                    $user = $this->getUser()->getUsername();
+               }
+            } catch (Exception $ex) {
+                $this->emError("Trying to retrieve username for projects page but cannot: " . PAGE);
+            }
             if (empty($user)) {
                 return;
             }
