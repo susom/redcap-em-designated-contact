@@ -47,7 +47,7 @@ class DesignatedContact extends \ExternalModules\AbstractExternalModule
             // Find the user
             $user = '';
             try {
-                if (defined("USERID")) {
+                if (defined(USERID)) {
                     $user = $this->getUser()->getUsername();
                 }
             } catch (Exception $ex) {
@@ -95,7 +95,7 @@ class DesignatedContact extends \ExternalModules\AbstractExternalModule
             // Find the current user
             $user = '';
             try {
-                if (defined("USERID")) {
+                if (defined(USERID)) {
                     $user = $this->getUser()->getUsername();
                }
             } catch (Exception $ex) {
@@ -113,7 +113,7 @@ class DesignatedContact extends \ExternalModules\AbstractExternalModule
             } catch (Exception $ex) {
                 $this->emError("Exception occurred when retrieving users with user rights", $ex->getMessage());
             }
-            if (in_array($user, $users) || (defined("SUPER_USER") && SUPER_USER)) {
+            if (in_array($user, $users) || (defined(SUPER_USER) && SUPER_USER)) {
 
                 // Find the designated contact project where the data is stored. If it is not setup yet, exit
                 $pmon_pid = $this->getSystemSetting('designated-contact-pid');
