@@ -47,9 +47,9 @@ class DesignatedContact extends \ExternalModules\AbstractExternalModule
             // Find the user
             $user = '';
             try {
-                if (defined(USERID)) {
+                //if (defined(USERID)) {
                     $user = $this->getUser()->getUsername();
-                }
+                //}
             } catch (Exception $ex) {
                 $this->emError("Trying to retrieve username on MyProjects page but no user defined: " . PAGE);
             }
@@ -95,9 +95,9 @@ class DesignatedContact extends \ExternalModules\AbstractExternalModule
             // Find the current user
             $user = '';
             try {
-                if (defined(USERID)) {
+                //if (defined(USERID)) {
                     $user = $this->getUser()->getUsername();
-               }
+               //}
             } catch (Exception $ex) {
                 $this->emError("Trying to retrieve username for projects page but cannot: " . PAGE);
             }
