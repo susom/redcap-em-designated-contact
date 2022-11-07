@@ -25,6 +25,25 @@ class DesignatedContact extends \ExternalModules\AbstractExternalModule
         parent::__construct();
     }
 
+
+    /**
+     * Get the current user
+     * @return string Username
+     */
+    function getCurrentUser() {
+        // Find the user
+        $user = '';
+        try {
+            if (defined('USERID') && !empty(USERID)) {
+                $user = $this->getUser()->getUsername();
+            }
+        } catch (Exception $ex) {
+            $this->emError("Trying to retrieve username on MyProjects page but no user defined: " . PAGE, $ex->getMessage());
+        }
+        return $user;        
+    }
+
+
     /**
      * This function is called after each page is loaded and before it is rendered. There are 2 main reasons
      * we have it enabled.
@@ -45,14 +64,7 @@ class DesignatedContact extends \ExternalModules\AbstractExternalModule
                 && ($_GET["action"] == "myprojects")) {
 
             // Find the user
-            $user = '';
-            try {
-                //if (defined(USERID)) {
-                    $user = $this->getUser()->getUsername();
-                //}
-            } catch (Exception $ex) {
-                $this->emError("Trying to retrieve username on MyProjects page but no user defined: " . PAGE);
-            }
+            $user = $this->getCurrentUser();
             if (empty($user)) {
                 return;
             }
@@ -92,15 +104,8 @@ class DesignatedContact extends \ExternalModules\AbstractExternalModule
          */
         if (PAGE === 'UserRights/index.php' || PAGE === 'ProjectSetup/index.php') {
 
-            // Find the current user
-            $user = '';
-            try {
-                //if (defined(USERID)) {
-                    $user = $this->getUser()->getUsername();
-               //}
-            } catch (Exception $ex) {
-                $this->emError("Trying to retrieve username for projects page but cannot: " . PAGE);
-            }
+            // Find the user
+            $user = $this->getCurrentUser();
             if (empty($user)) {
                 return;
             }
