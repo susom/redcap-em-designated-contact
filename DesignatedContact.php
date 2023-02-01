@@ -118,8 +118,9 @@ class DesignatedContact extends \ExternalModules\AbstractExternalModule
             } catch (Exception $ex) {
                 $this->emError("Exception occurred when retrieving users with user rights", $ex->getMessage());
             }
-            if (in_array($user, $users) || (defined(SUPER_USER) && SUPER_USER)) {
+            if (in_array($user, $users) || $this->isSuperUser()) {
 
+                $this->emDebug("Processing Designated Contact");
                 // Find the designated contact project where the data is stored. If it is not setup yet, exit
                 $pmon_pid = $this->getSystemSetting('designated-contact-pid');
                 $pmon_event_id = $this->getSystemSetting('designated-contact-event-id');
