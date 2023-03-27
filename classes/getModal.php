@@ -20,7 +20,7 @@ class GetModal
         $userList .= '      <div class="modal-content">';
         $userList .= '        <div class="modal-header" style="background-color:maroon;color:white">';
         $userList .= '          <h6 class="modal-title">What is a Designated Contact?</h6>';
-        $userList .= '          <button type="button" class="close" data-dismiss="modal" aria-label="Close">';
+        $userList .= '          <button type="button" class="close" data-bs-dismiss="modal" aria-label="Close">';
         $userList .= '              <span style="color:white;" aria-hidden="true">&times;</span>';
         $userList .= '          </button>';
         $userList .= '        </div>';
@@ -57,7 +57,7 @@ class GetModal
         $userList .= '          <div class="modal-content">';
         $userList .= '              <div class="modal-header" style="background-color:maroon;color:white">';
         $userList .= '                  <h5 class="modal-title">Choose a new Designated Contact</h5>';
-        $userList .= '                  <button type="button" class="close" data-dismiss="modal" aria-label="Close">';
+        $userList .= '                  <button type="button" class="close" data-bs-dismiss="modal" aria-label="Close">';
         $userList .= '                      <span style="color:white;" aria-hidden="true">&times;</span>';
         $userList .= '                  </button>';
         $userList .= '                  <input hidden id="redcap_csrf_token" value="' . $token . '" />';
@@ -93,7 +93,7 @@ class GetModal
         $userList .= '                        </div>';
         $userList .= '                  </div>';
         $userList .= '                  <div style="margin-top:40px;text-align:right">';
-        $userList .= '                        <input type="button" data-dismiss="modal" value="Close">';
+        $userList .= '                        <input type="button" data-bs-dismiss="modal" value="Close">';
         $userList .= '                        <input type="submit" onclick="saveNewContact()" value="Save">';
         $userList .= '                  </div>';
         $userList .= '              </div>';      // Modal body
@@ -110,13 +110,13 @@ class GetModal
             // There is no currently selected contact
             $userList .= '<div>';
             $userList .= '    <span style="margin-left:5px;">';
-            $userList .= '        <button type="button" class="fas fa-question-circle" style="margin-right:10px" title="What is a designated contact?" data-toggle="modal" data-target="#infomodal"></button>';
+            $userList .= '        <button type="button" class="fas fa-question-circle" style="margin-right:10px" title="What is a designated contact?" data-bs-toggle="modal" data-bs-target="#infomodal"></button>';
             $userList .= '    </span>';
             $userList .= '    <span style="font-weight:bold;color:#000; ">';
             $userList .= '        <i class="fas fa-exclamation-triangle" style="margin-right:5px;"></i>';
             $userList .= '    </span>';
             $userList .= '    <span style="margin:5px;">' . $current_person . '</span>';
-            $userList .= '    <button type="button" class="btn btn-sm btn-primary" style="font-size:12px" data-toggle="modal" data-target="#contactmodal">' . $button_text . '</button>';
+            $userList .= '    <button type="button" class="btn btn-sm btn-primary" style="font-size:12px" data-bs-toggle="modal" data-bs-target="#contactmodal">' . $button_text . '</button>';
             $userList .= '</div>';
 
         } else {
@@ -124,14 +124,14 @@ class GetModal
             // The contact is already selected
             $userList .= '<div>';
             $userList .= '    <span style="margin-left:5px;">';
-            $userList .= '        <button type="button" class="fas fa-question-circle" style="margin-right:10px" title="What is a designated contact?" data-toggle="modal" data-target="#infomodal"></button>';
+            $userList .= '        <button type="button" class="fas fa-question-circle" style="margin-right:10px" title="What is a designated contact?" data-bs-toggle="modal" data-bs-target="#infomodal"></button>';
             $userList .= '    </span>';
             $userList .= '    <span style="font-weight:bold;color:#000;">';
             $userList .= '        <i class="fas fa-address-book" style="margin-right:5px;"></i>';
             $userList .= '    </span>';
             $userList .= '    <span style="margin-right:5px;">' . $current_person . '</span>';
             $userList .= '    <span style="font-size:10px;margin-right:5px;">' . $contact_timestamp . '</span>';
-            $userList .= '    <button type="button" class="btn btn-sm btn-secondary" style="font-size:12px" data-toggle="modal" data-target="#contactmodal">' . $button_text . '</button>';
+            $userList .= '    <button type="button" class="btn btn-sm btn-secondary" style="font-size:12px" data-bs-toggle="modal" data-bs-target="#contactmodal">' . $button_text . '</button>';
             $userList .= '</div>';
         }
 
