@@ -329,7 +329,7 @@ class newContact
      * @param $email_subject
      * @param $email_body
      * @param $from_addr
-     * @return bool
+     * @return array
      */
     function findNewDesignatedContact($dc_pid, $dc_event_id, $pids, $action, $base_url, $email_subject, $email_body, $from_addr,
                                       $dc_url =  null, $su_url = null) {
@@ -371,8 +371,14 @@ class newContact
                 $new_user = '';
             }
 
+            // Retrieve the user data for this new user if there is one.
+            if (!empty($new_user)) {
+                // Retrieve info on this latest user
+                $user_info = $this->module->retrieveUserInformation(array($new_user));
+            }
+
             // If there is not a user to set as Designated Contact, the status of the project is Orphaned.
-            if (empty($new_user)) {
+            if (empty($new_user) || empty($user_info[$new_user])) {
 
                 // Only update the date if it is empty since we want to know when the project first became orphaned.
                 if ($data[$pid][$dc_event_id]['cron_status'] != ORPHANED_DC) {
@@ -389,9 +395,6 @@ class newContact
                 }
 
             } else{
-
-                // Retrieve info on this latest user
-                $user_info = $this->module->retrieveUserInformation(array($new_user));
 
                 // Add on the additional status info for the REDCap project
                 $new_user_info = $user_info[$new_user];
