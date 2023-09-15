@@ -371,6 +371,9 @@ class newContact
                 $new_user = '';
             }
 
+            # set empty array
+            $user_info = [];
+
             // Retrieve the user data for this new user if there is one.
             if (!empty($new_user)) {
                 // Retrieve info on this latest user
@@ -378,7 +381,7 @@ class newContact
             }
 
             // If there is not a user to set as Designated Contact, the status of the project is Orphaned.
-            if (empty($new_user) || empty($user_info[$new_user])) {
+            if (empty($new_user) || empty($user_info) || ($new_user && empty($user_info[$new_user]))) {
 
                 // Only update the date if it is empty since we want to know when the project first became orphaned.
                 if ($data[$pid][$dc_event_id]['cron_status'] != ORPHANED_DC) {
