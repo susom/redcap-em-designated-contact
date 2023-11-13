@@ -49,30 +49,29 @@
           "cron_name": "move_projects_to_complete_status",
           "cron_description": "This cron will run once a week on Saturday to check for projects with no DC selected, no non-suspended users and no log activity in the last 12 months.",
           "method": "moveProjectsToComplete",
-          "cron_hour": "20",
-          "cron_minute": "10",
-          "cron_weekday": 6
+          "cron_frequency": "604800",
+          "cron_max_run_time": "3600"
       },
       {
           "cron_name": "set_dc_for_new_projects",
           "cron_description": "This cron will set the creator of the project ",
           "method": "newProjectsNoDC",
-          "cron_hour": "20",
-          "cron_minute": "20"
+          "cron_frequency": "86400",
+          "cron_max_run_time": "3600"
       },
       {
           "cron_name": "reassign_designated_contacts",
           "cron_description": "This cron will reassign a new DC to projects whose DC is suspended ",
           "method": "reassignDesignatedContacts",
-          "cron_hour": "20",
-          "cron_minute": "30"
+          "cron_frequency": "86400",
+          "cron_max_run_time": "3600"
       },
       {
           "cron_name": "select_designated_contacts",
           "cron_description": "This cron will set a DC when one has not been selected",
           "method": "selectDesignatedContacts",
-          "cron_hour": "20",
-          "cron_minute": "40"
+          "cron_frequency": "86400",
+          "cron_max_run_time": "3600"
       }
   ],
 
